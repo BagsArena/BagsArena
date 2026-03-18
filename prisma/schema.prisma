@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SeasonStatus {
+  draft
+  live
+  frozen
+  ended
+}
+
+enum LaunchStatus {
+  building
+  launch_ready
+  live
+}
+
+enum RunPhase {
+  planning
+  coding
+  testing
+  deploying
+  launch_ready
+  post_launch
+}
+
+enum RunOutcome {
+  healthy
+  blocked
+  warning
+}
+
+enum ArtifactType {
+  log
+  screenshot
+  build_report
+  commit_diff
+  spec
+}
+
+enum EventCategory {
+  run
+  deploy
+  token
+  score
+  admin
+}
+
+model Season {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  status    SeasonStatus
+  summary   String
+  startAt   DateTime
+  freezeAt  DateTime
+  endAt     DateTime
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  projects  Project[]
+}
+
+model HouseAgent {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  displayName   String
+  handle        String
+  color         String
+  accent        String
+  model         String
+  persona       String
+  prompt        String
+  walletLabel   String
+  walletAddress String    @unique
+  repoOwner     String
+  templateRepo  String
+  projects      Project[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Project {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  name         String
+  thesis       String
+  category     String
+  repoUrl      String
+  previewUrl   String
+  launchStatus LaunchStatus
+  infrastructure Json
+  previewNotes Json
+  roadmap      Json
+  seasonId     String
+  agentId      String
+  season       Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  agent        HouseAgent   @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  runs         AgentRun[]
+  artifacts    Artifact[]
+  deployments  Deployment[]
+  tokenLaunch  TokenLaunch?
+  events       ArenaEvent[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model AgentRun {
+  id                   String     @id @default(cuid())
+  phase                RunPhase
+  outcome              RunOutcome
+  objective            String
+  promptSnapshot       String
+  terminal             Json
+  mergedCommits24h     Int
+  completedTasks24h    Int
+  successfulDeploys24h Int
+  startedAt            DateTime
+  endedAt              DateTime
+  projectId            String
+  project              Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt            DateTime   @default(now())
+}
+
+model Artifact {
+  id        String       @id @default(cuid())
+  type      ArtifactType
+  label     String
+  url       String
+  projectId String
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+}
+
+model Deployment {
+  id              String   @id @default(cuid())
+  sha             String
+  branch          String
+  previewUrl      String
+  status          String
+  durationSeconds Int
+  screenshotLabel String
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+}
+
+model TokenLaunch {
+  id              String           @id @default(cuid())
+  mint            String           @unique
+  symbol          String
+  name            String
+  description     String
+  metadataUrl     String
+  bagsUrl         String
+  configKey       String
+  partnerKey      String
+  creatorWallet   String
+  launchSignature String
+  launchedAt      DateTime
+  status          LaunchStatus
+  performance     Json
+  creators        Json
+  claims          Json
+  projectId       String           @unique
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  snapshots       MetricSnapshot[]
+}
+
+model MetricSnapshot {
+  id           String      @id @default(cuid())
+  mint         String
+  marketCap    Float
+  volume24h    Float
+  lifetimeFees Float
+  priceUsd     Float
+  claimCount   Int
+  recordedAt   DateTime
+  tokenLaunch  TokenLaunch @relation(fields: [mint], references: [mint], onDelete: Cascade)
+}
+
+model ScoreSnapshot {
+  id           String   @id @default(cuid())
+  seasonId     String
+  agentId      String
+  score        Float
+  marketCap    Float
+  volume24h    Float
+  lifetimeFees Float
+  shipVelocity Float
+  recordedAt   DateTime
+}
+
+model ArenaEvent {
+  id         String        @id @default(cuid())
+  category   EventCategory
+  title      String
+  detail     String
+  scoreDelta Float?
+  createdAt  DateTime      @default(now())
+  projectId  String
+  project    Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}

@@ -15,6 +15,7 @@ import {
   applyAgentRuntimeConfig,
   applyTokenRuntimeConfig,
 } from "@/lib/arena/runtime-config";
+import { resolveProjectPreviewUrl } from "@/lib/arena/preview";
 import { buildLeaderboard, deriveSeasonStatus } from "@/lib/arena/score";
 import type {
   AgentRun,
@@ -286,6 +287,7 @@ function mapProject(record: ProjectRecord): Project {
   const tokenRecord = record.tokenLaunch;
   const runRecord = record.runs[0];
   const agent = mapHouseAgent(record.agent);
+  const infrastructure = readProjectInfrastructure(record.infrastructure);
 
   if (!tokenRecord || !runRecord) {
     throw new Error(`Project ${record.slug} is missing required launch/run state.`);
@@ -329,9 +331,9 @@ function mapProject(record: ProjectRecord): Project {
     thesis: record.thesis,
     category: record.category,
     repoUrl: record.repoUrl,
-    previewUrl: record.previewUrl,
+    previewUrl: resolveProjectPreviewUrl(record.slug, record.previewUrl, infrastructure),
     launchStatus: toLaunchStatus(record.launchStatus),
-    infrastructure: readProjectInfrastructure(record.infrastructure),
+    infrastructure,
     roadmap: readJson(record.roadmap, []),
     previewHighlights: readJson(record.previewNotes, []),
     artifacts: record.artifacts.map(
@@ -348,7 +350,11 @@ function mapProject(record: ProjectRecord): Project {
         id: deployment.id,
         sha: deployment.sha,
         branch: deployment.branch,
-        previewUrl: deployment.previewUrl,
+        previewUrl: resolveProjectPreviewUrl(
+          record.slug,
+          deployment.previewUrl,
+          infrastructure,
+        ),
         status: deployment.status as Deployment["status"],
         durationSeconds: deployment.durationSeconds,
         screenshotLabel: deployment.screenshotLabel,

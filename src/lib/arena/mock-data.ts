@@ -4,6 +4,7 @@ import {
   applyAgentRuntimeConfig,
   applyTokenRuntimeConfig,
 } from "@/lib/arena/runtime-config";
+import { resolveProjectPreviewUrl } from "@/lib/arena/preview";
 import { buildLeaderboard, deriveSeasonStatus } from "@/lib/arena/score";
 import type {
   ArenaSnapshot,
@@ -346,6 +347,30 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
   const tokens = tokensBase.map((token, index) =>
     applyTokenRuntimeConfig(token, agents[index]!),
   );
+  const signalSafariInfrastructure = createLocalInfrastructure();
+  const signalSafariPreviewUrl = resolveProjectPreviewUrl(
+    "signal-safari",
+    "https://signal-safari.vercel.app",
+    signalSafariInfrastructure,
+  );
+  const cloutCabinetInfrastructure = createLocalInfrastructure();
+  const cloutCabinetPreviewUrl = resolveProjectPreviewUrl(
+    "clout-cabinet",
+    "https://clout-cabinet.vercel.app",
+    cloutCabinetInfrastructure,
+  );
+  const nightShiftInfrastructure = createLocalInfrastructure();
+  const nightShiftPreviewUrl = resolveProjectPreviewUrl(
+    "night-shift",
+    "https://night-shift.vercel.app",
+    nightShiftInfrastructure,
+  );
+  const ghostKitchenInfrastructure = createLocalInfrastructure();
+  const ghostKitchenPreviewUrl = resolveProjectPreviewUrl(
+    "ghost-kitchen",
+    "https://ghost-kitchen.vercel.app",
+    ghostKitchenInfrastructure,
+  );
 
   const projects: Project[] = [
     {
@@ -358,9 +383,9 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Turn internet chatter into live product concepts, score them, and tee them up for tokenized launches.",
       category: "consumer intelligence",
       repoUrl: "https://github.com/bags-arena/signal-safari",
-      previewUrl: "https://signal-safari.vercel.app",
+      previewUrl: signalSafariPreviewUrl,
       launchStatus: "building",
-      infrastructure: createLocalInfrastructure(),
+      infrastructure: signalSafariInfrastructure,
       roadmap: [
         {
           id: "atlas-roadmap-1",
@@ -390,7 +415,7 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Auto-thread export for launch narratives",
       ],
       artifacts: createArtifacts(now, "atlas"),
-      deployments: createDeployments(now, "atlas", "https://signal-safari.vercel.app"),
+      deployments: createDeployments(now, "atlas", signalSafariPreviewUrl),
       activeRun: {
         id: "run-atlas-01",
         phase: "deploying",
@@ -425,9 +450,9 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Creator storefronts that route distribution fees, referrers, and launch rewards into one surface.",
       category: "creator monetization",
       repoUrl: "https://github.com/bags-arena/clout-cabinet",
-      previewUrl: "https://clout-cabinet.vercel.app",
+      previewUrl: cloutCabinetPreviewUrl,
       launchStatus: "building",
-      infrastructure: createLocalInfrastructure(),
+      infrastructure: cloutCabinetInfrastructure,
       roadmap: [
         {
           id: "loom-roadmap-1",
@@ -457,7 +482,7 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Live Bags claims activity ticker",
       ],
       artifacts: createArtifacts(now, "loom"),
-      deployments: createDeployments(now, "loom", "https://clout-cabinet.vercel.app"),
+      deployments: createDeployments(now, "loom", cloutCabinetPreviewUrl),
       activeRun: {
         id: "run-loom-01",
         phase: "testing",
@@ -490,9 +515,9 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Agent-owned release management with one console for checks, deploys, and post-launch observability.",
       category: "developer tooling",
       repoUrl: "https://github.com/bags-arena/night-shift",
-      previewUrl: "https://night-shift.vercel.app",
+      previewUrl: nightShiftPreviewUrl,
       launchStatus: "building",
-      infrastructure: createLocalInfrastructure(),
+      infrastructure: nightShiftInfrastructure,
       roadmap: [
         {
           id: "switch-roadmap-1",
@@ -522,7 +547,7 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Incident replay timeline",
       ],
       artifacts: createArtifacts(now, "switch"),
-      deployments: createDeployments(now, "switch", "https://night-shift.vercel.app"),
+      deployments: createDeployments(now, "switch", nightShiftPreviewUrl),
       activeRun: {
         id: "run-switch-01",
         phase: "coding",
@@ -555,9 +580,9 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "A micro-studio for short-loop web games that uses live momentum to shape the next release.",
       category: "games",
       repoUrl: "https://github.com/bags-arena/ghost-kitchen",
-      previewUrl: "https://ghost-kitchen.vercel.app",
+      previewUrl: ghostKitchenPreviewUrl,
       launchStatus: "building",
-      infrastructure: createLocalInfrastructure(),
+      infrastructure: ghostKitchenInfrastructure,
       roadmap: [
         {
           id: "pulse-roadmap-1",
@@ -587,7 +612,7 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
         "Replay streak telemetry",
       ],
       artifacts: createArtifacts(now, "pulse"),
-      deployments: createDeployments(now, "pulse", "https://ghost-kitchen.vercel.app"),
+      deployments: createDeployments(now, "pulse", ghostKitchenPreviewUrl),
       activeRun: {
         id: "run-pulse-01",
         phase: "deploying",

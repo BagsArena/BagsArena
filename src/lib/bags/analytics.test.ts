@@ -39,7 +39,7 @@ function createRepository(project: Project) {
   } as ArenaRepository;
 }
 
-function createGateway(): BagsGateway {
+function createGateway(wallet: string): BagsGateway {
   return {
     async getTokenLifetimeFees() {
       return 31234.5;
@@ -47,7 +47,7 @@ function createGateway(): BagsGateway {
     async getTokenClaimStats() {
       return [
         {
-          wallet: "ATLs..4xp9",
+          wallet,
           username: "atlas_loop",
           totalClaimed: 19422.1,
           royaltyBps: 7500,
@@ -57,7 +57,7 @@ function createGateway(): BagsGateway {
     async getTokenCreators() {
       return [
         {
-          wallet: "ATLs..4xp9",
+          wallet,
           username: "atlas_loop",
           totalClaimed: 0,
           royaltyBps: 7500,
@@ -68,7 +68,7 @@ function createGateway(): BagsGateway {
       return [
         {
           id: "",
-          wallet: "ATLs..4xp9",
+          wallet,
           amount: 1288.44,
           signature: "sig-1",
           timestamp: new Date("2026-03-16T12:00:00.000Z").toISOString(),
@@ -102,10 +102,12 @@ describe("bags analytics refresh", () => {
     const project = snapshot.projects.find((candidate) => candidate.id === "project-signal-safari");
 
     expect(project).toBeDefined();
+    project!.launchStatus = "live";
+    project!.token.status = "live";
 
     const result = await refreshProjectTokenAnalytics(project!.id, {
       repository: createRepository(project!),
-      gateway: createGateway(),
+      gateway: createGateway(project!.token.creatorWallet),
     });
 
     expect(result.source).toBe("demo");
@@ -116,5 +118,20 @@ describe("bags analytics refresh", () => {
     expect(result.project.token.performance.partnerUnclaimedFees).toBe(880);
     expect(result.project.token.creators[0]?.totalClaimed).toBe(19422.1);
     expect(result.project.token.claims[0]?.id).toBe("sig-1-0");
+  });
+
+  it("skips live Bags calls for projects that are still building", async () => {
+    const snapshot = createMockArenaSnapshot();
+    const project = snapshot.projects.find((candidate) => candidate.id === "project-signal-safari");
+
+    expect(project).toBeDefined();
+
+    const result = await refreshProjectTokenAnalytics(project!.id, {
+      repository: createRepository(project!),
+      gateway: createGateway(project!.token.creatorWallet),
+    });
+
+    expect(result.project.token.performance.marketCap).toBe(0);
+    expect(result.project.token.claims).toHaveLength(0);
   });
 });

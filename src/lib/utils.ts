@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { formatDistanceToNowStrict } from "date-fns";
+import type { Project, RoadmapItem } from "@/lib/arena/types";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -38,4 +39,15 @@ export function slugify(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+export function isProjectLive(project: Pick<Project, "launchStatus">) {
+  return project.launchStatus === "live";
+}
+
+export function countRoadmapItemsByStatus(
+  items: RoadmapItem[],
+  status: RoadmapItem["status"],
+) {
+  return items.filter((item) => item.status === status).length;
 }

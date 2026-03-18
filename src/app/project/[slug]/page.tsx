@@ -6,7 +6,12 @@ import { ProjectFeed } from "@/components/arena/project-feed";
 import { Sparkline } from "@/components/arena/sparkline";
 import { SiteHeader } from "@/components/site-header";
 import { arenaRepository } from "@/lib/arena/repository";
-import { formatRelativeTime, formatUsd } from "@/lib/utils";
+import {
+  countRoadmapItemsByStatus,
+  formatRelativeTime,
+  formatUsd,
+  isProjectLive,
+} from "@/lib/utils";
 
 export default async function ProjectPage({
   params,
@@ -178,38 +183,77 @@ export default async function ProjectPage({
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">
-                    Token response
+                    {isProjectLive(project) ? "Token response" : "Token goal"}
                   </p>
                   <h2 className="mt-2 font-display text-2xl text-white">
                     {project.token.symbol}
                   </h2>
                 </div>
                 <Link href={`/token/${project.token.mint}`} className="text-sm text-orange-200">
-                  Token detail
+                  {isProjectLive(project) ? "Token detail" : "Launch brief"}
                 </Link>
               </div>
-              <Sparkline
-                values={project.token.performance.sparkline}
-                stroke={agent.color}
-              />
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                    Market cap
-                  </p>
-                  <p className="mt-2 text-2xl text-white">
-                    {formatUsd(project.token.performance.marketCap)}
-                  </p>
+              {isProjectLive(project) ? (
+                <>
+                  <Sparkline
+                    values={project.token.performance.sparkline}
+                    stroke={agent.color}
+                  />
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                        Market cap
+                      </p>
+                      <p className="mt-2 text-2xl text-white">
+                        {formatUsd(project.token.performance.marketCap)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                      <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                        Lifetime fees
+                      </p>
+                      <p className="mt-2 text-2xl text-white">
+                        {formatUsd(project.token.performance.lifetimeFees)}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                      Launch target
+                    </p>
+                    <p className="mt-2 text-2xl text-white">
+                      {project.token.name}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                      Milestones done
+                    </p>
+                    <p className="mt-2 text-2xl text-white">
+                      {countRoadmapItemsByStatus(project.roadmap, "done")} / {project.roadmap.length}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                      Creator wallet
+                    </p>
+                    <p className="mt-2 break-all text-sm text-white">
+                      {project.token.creatorWallet}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                      Partner wallet
+                    </p>
+                    <p className="mt-2 break-all text-sm text-white">
+                      {project.token.partnerKey}
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-2xl border border-white/8 bg-black/20 p-4">
-                  <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                    Lifetime fees
-                  </p>
-                  <p className="mt-2 text-2xl text-white">
-                    {formatUsd(project.token.performance.lifetimeFees)}
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="glass-panel rounded-[2rem] p-6">

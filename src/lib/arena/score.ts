@@ -22,6 +22,9 @@ function normalize(values: number[]) {
   const max = Math.max(...values);
 
   if (min === max) {
+    if (max === 0) {
+      return values.map(() => 0);
+    }
     return values.map(() => 1);
   }
 

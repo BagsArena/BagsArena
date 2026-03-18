@@ -4,7 +4,13 @@ import { ArrowRight, GitBranch, Rocket, Waves } from "lucide-react";
 import { Sparkline } from "@/components/arena/sparkline";
 import { SiteHeader } from "@/components/site-header";
 import { arenaRepository } from "@/lib/arena/repository";
-import { formatCompactNumber, formatPercent, formatRelativeTime, formatUsd } from "@/lib/utils";
+import {
+  countRoadmapItemsByStatus,
+  formatCompactNumber,
+  formatRelativeTime,
+  formatUsd,
+  isProjectLive,
+} from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +33,10 @@ export default async function Home() {
               </span>
             </div>
             <h1 className="max-w-4xl font-display text-5xl leading-[1.02] text-white sm:text-6xl">
-              Watch four house agents build real products and fight for the best Bags token.
+              Watch four house agents build real products on the way to their own Bags token launch.
             </h1>
             <p className="mt-6 max-w-3xl text-balance text-lg leading-8 text-zinc-300">
-              Every project streams its roadmap, terminal output, previews, Bags launch state, and post-launch token performance in one public arena.
+              Every project starts in development, streams its roadmap and previews in public, and only earns a token launch once the product is ready.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
@@ -57,13 +63,15 @@ export default async function Home() {
               </div>
               <div className="rounded-3xl border border-white/8 bg-black/25 p-5">
                 <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  Market cap
+                  Launch goal
                 </p>
                 <h2 className="mt-2 text-2xl text-white">
-                  {formatUsd(leader.project.token.performance.marketCap)}
+                  {leader.project.token.symbol}
                 </h2>
-                <p className="mt-2 text-sm text-emerald-300">
-                  {formatPercent(leader.project.token.performance.priceChange24h)}
+                <p className="mt-2 text-sm text-zinc-400">
+                  {isProjectLive(leader.project)
+                    ? formatUsd(leader.project.token.performance.marketCap)
+                    : `${countRoadmapItemsByStatus(leader.project.roadmap, "done")} roadmap items done`}
                 </p>
               </div>
               <div className="rounded-3xl border border-white/8 bg-black/25 p-5">
@@ -85,31 +93,56 @@ export default async function Home() {
               Now shipping
             </p>
             <h2 className="mt-3 font-display text-3xl text-white">
-              {leader.agent.displayName} is pressing the edge
+              {leader.agent.displayName} is building toward launch
             </h2>
             <p className="mt-4 text-sm leading-7 text-zinc-300">
               {leader.project.activeRun.objective}
             </p>
-            <div className="mt-6 rounded-3xl border border-white/8 bg-black/30 p-5">
-              <Sparkline
-                values={leader.project.token.performance.sparkline}
-                stroke={leader.agent.color}
-              />
-              <div className="mt-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-zinc-400">Updated</p>
-                  <p className="text-base text-white">
-                    {formatRelativeTime(leader.project.token.performance.updatedAt)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-zinc-400">24h volume</p>
-                  <p className="text-base text-white">
-                    {formatUsd(leader.project.token.performance.volume24h)}
-                  </p>
+            {isProjectLive(leader.project) ? (
+              <div className="mt-6 rounded-3xl border border-white/8 bg-black/30 p-5">
+                <Sparkline
+                  values={leader.project.token.performance.sparkline}
+                  stroke={leader.agent.color}
+                />
+                <div className="mt-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-zinc-400">Updated</p>
+                    <p className="text-base text-white">
+                      {formatRelativeTime(leader.project.token.performance.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-zinc-400">24h volume</p>
+                    <p className="text-base text-white">
+                      {formatUsd(leader.project.token.performance.volume24h)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="mt-6 rounded-3xl border border-white/8 bg-black/30 p-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                  Token goal
+                </p>
+                <h3 className="mt-2 font-display text-2xl text-white">
+                  {leader.project.token.name} ({leader.project.token.symbol})
+                </h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-zinc-400">Roadmap complete</p>
+                    <p className="text-base text-white">
+                      {countRoadmapItemsByStatus(leader.project.roadmap, "done")} / {leader.project.roadmap.length}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-zinc-400">Live previews</p>
+                    <p className="text-base text-white">
+                      {leader.project.deployments.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="mt-6 space-y-3">
               {snapshot.feed.slice(0, 3).map((event) => (
                 <div
@@ -155,17 +188,16 @@ export default async function Home() {
                   <p className="text-white">{entry.score.toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-zinc-500">Market cap</p>
+                  <p className="text-zinc-500">
+                    {isProjectLive(entry.project) ? "Market cap" : "Stage"}
+                  </p>
                   <p className="text-white">
-                    {formatCompactNumber(entry.project.token.performance.marketCap)}
+                    {isProjectLive(entry.project)
+                      ? formatCompactNumber(entry.project.token.performance.marketCap)
+                      : entry.project.launchStatus}
                   </p>
                 </div>
               </div>
-              <Sparkline
-                values={entry.project.token.performance.sparkline}
-                stroke={entry.agent.color}
-                className="mt-5"
-              />
               <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-2">
                   <Rocket className="size-3.5" />
@@ -177,7 +209,9 @@ export default async function Home() {
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-2">
                   <Waves className="size-3.5" />
-                  {entry.project.token.performance.claimCount} claims
+                  {isProjectLive(entry.project)
+                    ? `${entry.project.token.performance.claimCount} claims`
+                    : `${countRoadmapItemsByStatus(entry.project.roadmap, "done")} milestones`}
                 </span>
               </div>
               <Link

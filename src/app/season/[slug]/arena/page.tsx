@@ -6,7 +6,12 @@ import { LiveFeed } from "@/components/arena/live-feed";
 import { Sparkline } from "@/components/arena/sparkline";
 import { SiteHeader } from "@/components/site-header";
 import { arenaRepository } from "@/lib/arena/repository";
-import { formatRelativeTime, formatUsd } from "@/lib/utils";
+import {
+  countRoadmapItemsByStatus,
+  formatRelativeTime,
+  formatUsd,
+  isProjectLive,
+} from "@/lib/utils";
 
 export default async function ArenaPage({
   params,
@@ -36,7 +41,7 @@ export default async function ArenaPage({
             </h1>
           </div>
           <p className="max-w-xl text-right text-sm leading-7 text-zinc-400">
-            Each lane shows the active build cycle, roadmap pressure, preview status, and the Bags token response in near-real time.
+            Each lane shows the active build cycle, roadmap pressure, preview status, and how close each project is to earning its eventual Bags token launch.
           </p>
         </div>
 
@@ -83,32 +88,63 @@ export default async function ArenaPage({
                   </div>
                 </div>
 
-                <div className="mt-5 rounded-3xl border border-white/8 bg-black/20 p-4">
-                  <Sparkline
-                    values={entry.project.token.performance.sparkline}
-                    stroke={entry.agent.color}
-                  />
-                  <div className="mt-4 grid gap-2 text-sm text-zinc-400">
-                    <div className="flex items-center justify-between">
-                      <span>Updated</span>
-                      <span className="text-white">
-                        {formatRelativeTime(entry.project.token.performance.updatedAt)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Market cap</span>
-                      <span className="text-white">
-                        {formatUsd(entry.project.token.performance.marketCap)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Volume 24h</span>
-                      <span className="text-white">
-                        {formatUsd(entry.project.token.performance.volume24h)}
-                      </span>
+                {isProjectLive(entry.project) ? (
+                  <div className="mt-5 rounded-3xl border border-white/8 bg-black/20 p-4">
+                    <Sparkline
+                      values={entry.project.token.performance.sparkline}
+                      stroke={entry.agent.color}
+                    />
+                    <div className="mt-4 grid gap-2 text-sm text-zinc-400">
+                      <div className="flex items-center justify-between">
+                        <span>Updated</span>
+                        <span className="text-white">
+                          {formatRelativeTime(entry.project.token.performance.updatedAt)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Market cap</span>
+                        <span className="text-white">
+                          {formatUsd(entry.project.token.performance.marketCap)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Volume 24h</span>
+                        <span className="text-white">
+                          {formatUsd(entry.project.token.performance.volume24h)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="mt-5 rounded-3xl border border-white/8 bg-black/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                      Token goal
+                    </p>
+                    <h3 className="mt-2 font-display text-xl text-white">
+                      {entry.project.token.name} ({entry.project.token.symbol})
+                    </h3>
+                    <div className="mt-4 grid gap-2 text-sm text-zinc-400">
+                      <div className="flex items-center justify-between">
+                        <span>Milestones done</span>
+                        <span className="text-white">
+                          {countRoadmapItemsByStatus(entry.project.roadmap, "done")} / {entry.project.roadmap.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Preview deploys</span>
+                        <span className="text-white">
+                          {entry.project.deployments.length}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Live status</span>
+                        <span className="text-white">
+                          Not launched yet
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-5 space-y-2">
                   {entry.project.roadmap.map((item) => (

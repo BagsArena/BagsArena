@@ -13,7 +13,7 @@ import type {
 } from "@/lib/bags/client";
 import { createBagsGateway } from "@/lib/bags/client";
 import { env, hasLiveBagsConfig } from "@/lib/env";
-import { formatUsd } from "@/lib/utils";
+import { formatUsd, isProjectLive } from "@/lib/utils";
 
 interface RefreshDependencies {
   repository?: ArenaRepository;
@@ -168,6 +168,23 @@ export async function refreshProjectTokenAnalytics(
   const gateway = dependencies.gateway ?? createBagsGateway();
   const project = await getProjectById(repository, projectId);
   const source = !env.arenaDemoMode && hasLiveBagsConfig ? "bags" : "demo";
+
+  if (!isProjectLive(project)) {
+    return {
+      project: await repository.updateProjectTokenAnalytics(projectId, {
+        performance: {
+          updatedAt: new Date().toISOString(),
+        },
+        event: {
+          category: "admin",
+          title: "Token launch still in development",
+          detail: `${project.name} is still shipping product work, so live Bags metrics are intentionally paused until the token launches.`,
+          scoreDelta: 0,
+        },
+      }),
+      source,
+    };
+  }
 
   const [lifetimeFees, claimStats, creators, rawClaims, marketStats, partnerStats] =
     await Promise.all([

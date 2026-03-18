@@ -32,17 +32,24 @@ export function ProjectFeed({ endpoint, initialEvents }: ProjectFeedProps) {
       {events.map((event) => (
         <div
           key={event.id}
-          className="ui-stat"
+          className="ui-feed-row"
         >
-          <div className="mb-1 flex items-center justify-between gap-4">
-            <h4 className="text-sm font-semibold text-[color:var(--foreground)]">
-              {event.title}
-            </h4>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="ui-feed-dot mt-2 shrink-0" />
+              <div>
+                <h4 className="text-sm font-semibold text-[color:var(--foreground)]">
+                  {event.title}
+                </h4>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                  {event.detail}
+                </p>
+              </div>
+            </div>
             <span className="text-xs text-[color:var(--muted)]">
               {formatRelativeTime(event.createdAt)}
             </span>
           </div>
-          <p className="text-sm leading-6 text-[color:var(--muted)]">{event.detail}</p>
         </div>
       ))}
     </div>

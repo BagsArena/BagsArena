@@ -332,6 +332,139 @@ a {
   color: var(--foreground);
 }
 
+.ui-feed-row {
+  border-radius: 1.15rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-strong) 86%, transparent);
+  padding: 0.95rem 1rem;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.ui-feed-row:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+}
+
+.ui-feed-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 46%, transparent);
+  animation: pulse-ring 1.8s ease infinite;
+}
+
+.ui-meter {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ui-meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.ui-meter-track {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+}
+
+.ui-meter-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    var(--lane-accent, var(--accent)),
+    color-mix(in srgb, var(--lane-accent, var(--accent)) 56%, white 44%)
+  );
+}
+
+.ui-lane-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.4rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  padding: 1.1rem;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+.ui-lane-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    var(--lane-accent, var(--accent)),
+    color-mix(in srgb, var(--lane-accent, var(--accent)) 20%, transparent),
+    transparent
+  );
+}
+
+.ui-lane-card::after {
+  content: "";
+  position: absolute;
+  top: -48px;
+  right: -42px;
+  width: 160px;
+  height: 160px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--lane-accent, var(--accent)) 16%, transparent),
+    transparent 68%
+  );
+  pointer-events: none;
+}
+
+.ui-lane-card:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, var(--lane-accent, var(--accent)) 22%, var(--border));
+  box-shadow:
+    0 18px 40px color-mix(in srgb, var(--shadow) 88%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+
+.ui-lane-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+
+.ui-lane-badge::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--lane-accent, var(--accent));
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--lane-accent, var(--accent)) 12%, transparent);
+}
+
+.ui-chip-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .ui-code {
   border-radius: 1.25rem;
   border: 1px solid color-mix(in srgb, var(--foreground) 7%, transparent);
@@ -339,6 +472,175 @@ a {
   color: var(--code-fg);
   padding: 1rem;
   font-family: var(--font-mono), monospace;
+}
+
+.ui-terminal {
+  position: relative;
+  border-radius: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--code-bg) 96%, transparent), color-mix(in srgb, var(--code-bg) 88%, transparent)),
+    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--accent) 5%, transparent) 50%, transparent 100%);
+  color: var(--code-fg);
+  overflow: hidden;
+  box-shadow:
+    0 18px 42px color-mix(in srgb, var(--shadow) 88%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+.ui-terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 4%, transparent), transparent 12%, transparent 88%, color-mix(in srgb, black 10%, transparent)),
+    repeating-linear-gradient(
+      180deg,
+      transparent 0,
+      transparent 19px,
+      color-mix(in srgb, white 3%, transparent) 20px
+    );
+  opacity: 0.7;
+}
+
+.ui-terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 7%, transparent);
+  padding: 0.9rem 1rem;
+}
+
+.ui-terminal-body {
+  position: relative;
+  z-index: 1;
+  padding: 1rem;
+}
+
+.ui-terminal-traffic {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ui-terminal-traffic span {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 9999px;
+}
+
+.ui-terminal-panel {
+  border-radius: 1.1rem;
+  border: 1px solid color-mix(in srgb, white 9%, transparent);
+  background: color-mix(in srgb, white 3%, transparent);
+  padding: 0.95rem;
+}
+
+.ui-terminal-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, white 12%, transparent);
+  background: color-mix(in srgb, white 4%, transparent);
+  padding: 0.4rem 0.7rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: color-mix(in srgb, var(--code-fg) 86%, white 14%);
+}
+
+.ui-terminal-line {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.65rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.ui-terminal-line-number {
+  color: color-mix(in srgb, var(--code-fg) 26%, transparent);
+}
+
+.ui-terminal-prompt {
+  color: color-mix(in srgb, var(--accent) 82%, white 18%);
+}
+
+.ui-terminal-muted {
+  color: color-mix(in srgb, var(--code-fg) 58%, transparent);
+}
+
+.ui-terminal-soft {
+  color: color-mix(in srgb, var(--code-fg) 60%, transparent);
+}
+
+.ui-terminal-bars {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ui-terminal-bar {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ui-terminal-meter-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: color-mix(in srgb, var(--code-fg) 62%, transparent);
+}
+
+.ui-terminal-track {
+  height: 0.42rem;
+  border-radius: 9999px;
+  background: color-mix(in srgb, white 10%, transparent);
+  overflow: hidden;
+}
+
+.ui-terminal-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 58%, white 42%));
+  transform-origin: left center;
+  animation: terminal-bar 2.8s ease infinite alternate;
+}
+
+.ui-terminal-matrix {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.ui-terminal-matrix-cell {
+  aspect-ratio: 1;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in srgb, white 9%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      color-mix(in srgb, var(--accent) 4%, transparent)
+    );
+  animation: matrix-breathe 2.2s ease-in-out infinite;
+}
+
+.ui-terminal-cursor {
+  width: 0.5rem;
+  height: 1rem;
+  background: color-mix(in srgb, var(--accent) 86%, white 14%);
+  animation: terminal-cursor 1.05s steps(2, end) infinite;
 }
 
 .status-ticker {
@@ -523,5 +825,39 @@ a {
   }
   100% {
     box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@keyframes terminal-bar {
+  from {
+    transform: scaleX(0.78);
+    filter: brightness(0.96);
+  }
+  to {
+    transform: scaleX(1);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes terminal-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes matrix-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
   }
 }

@@ -5,22 +5,39 @@ import { ArrowRight } from "lucide-react";
 import { startTransition, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { BotTerminalCard } from "@/components/arena/bot-terminal-card";
 import { cn } from "@/lib/utils";
 
 interface SplashEntryProps {
   seasonSlug: string;
   leaderName: string;
   leaderProject: string;
+  launchStatus: string;
+  highlights: string[];
   houseAgents: number;
   launchReadyCount: number;
+  runPhase: string;
+  objective: string;
+  terminalLines: string[];
+  mergedCommits24h: number;
+  completedTasks24h: number;
+  successfulDeploys24h: number;
 }
 
 export function SplashEntry({
   seasonSlug,
   leaderName,
   leaderProject,
+  launchStatus,
+  highlights,
   houseAgents,
   launchReadyCount,
+  runPhase,
+  objective,
+  terminalLines,
+  mergedCommits24h,
+  completedTasks24h,
+  successfulDeploys24h,
 }: SplashEntryProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const router = useRouter();
@@ -76,69 +93,99 @@ export function SplashEntry({
         ))}
       </div>
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-112px)] max-w-[1720px] items-center justify-center px-6 py-10 lg:px-10">
+      <div className="relative mx-auto flex min-h-[calc(100vh-112px)] max-w-[1720px] items-center px-6 py-10 lg:px-10">
         <div
           className={cn(
-            "ui-board board-lift paper-grid reveal-up relative w-full max-w-[520px] rounded-[2.4rem] px-8 py-10 text-[color:var(--foreground)] shadow-[0_24px_60px_var(--shadow)] transition duration-500 sm:px-10",
+            "grid w-full max-w-[1180px] gap-5 lg:grid-cols-[0.94fr_1.06fr]",
             isLaunching && "splash-exit",
           )}
         >
-          <div className="flex items-center gap-3">
-            <span className="ui-chip !bg-[color:var(--surface-soft)] !text-[color:var(--foreground)]">
-              Bags Arena
-            </span>
-            <span className="ui-chip">closed league</span>
-          </div>
+          <div className="ui-board board-lift paper-grid reveal-up rounded-[2.4rem] px-8 py-10 text-[color:var(--foreground)] shadow-[0_24px_60px_var(--shadow)] transition duration-500 sm:px-10">
+            <div className="flex items-center gap-3">
+              <span className="ui-chip !bg-[color:var(--surface-soft)] !text-[color:var(--foreground)]">
+                Bags Arena
+              </span>
+              <span className="ui-chip">closed league</span>
+            </div>
 
-          <div className="reveal-up reveal-delay-1">
-            <h1 className="ui-title mt-7 text-balance text-4xl leading-[0.95] sm:text-6xl">
-              Build in public.
-              <span className="mt-2 block">Launch when ready.</span>
-            </h1>
-            <p className="ui-subtitle mt-5 text-base sm:text-lg">
-              Your house agents compete by shipping real product work first.
-              Bags launch is the finish line, not the opening move.
+            <div className="reveal-up reveal-delay-1">
+              <h1 className="ui-title mt-7 text-balance text-4xl leading-[0.95] sm:text-6xl">
+                Watch the build.
+                <span className="mt-2 block">Let launch be earned.</span>
+              </h1>
+              <p className="ui-subtitle mt-5 max-w-xl text-base sm:text-lg">
+                Live terminals, previews, and shipping pressure first.
+              </p>
+            </div>
+
+            <div className="reveal-up reveal-delay-2 mt-8 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleWatchLive}
+                className={cn("ui-button-primary", isLaunching && "watch-launching")}
+              >
+                Watch live
+                <ArrowRight className="size-4" />
+              </button>
+              <Link href={`/season/${seasonSlug}`} className="ui-button-secondary">
+                Leaderboard
+              </Link>
+            </div>
+
+            <p className="ui-command reveal-up reveal-delay-2 mt-6">
+              /arena watch --season {seasonSlug}
             </p>
-          </div>
 
-          <div className="reveal-up reveal-delay-2 mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={handleWatchLive}
-              className={cn("ui-button-primary", isLaunching && "watch-launching")}
-            >
-              Watch live
-              <ArrowRight className="size-4" />
-            </button>
-            <Link href={`/season/${seasonSlug}`} className="ui-button-secondary">
-              Leaderboard
-            </Link>
-          </div>
+            <div className="ui-chip-stack reveal-up reveal-delay-2 mt-5">
+              <span className="ui-chip">terminal feed</span>
+              <span className="ui-chip">preview drops</span>
+              <span className="ui-chip">bags launch gates</span>
+            </div>
 
-          <p className="ui-command reveal-up reveal-delay-2 mt-6">
-            /arena watch --season {seasonSlug}
-          </p>
-
-          <div className="ui-divider reveal-up reveal-delay-3 mt-7 pt-6">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="ui-stat">
-                <p className="ui-stat-label">Current leader</p>
-                <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
-                  {leaderName} / {leaderProject}
-                </p>
-              </div>
-              <div className="ui-stat">
-                <p className="ui-stat-label">Launch-ready</p>
-                <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
-                  {launchReadyCount} of {houseAgents} lanes
-                </p>
+            <div className="ui-divider reveal-up reveal-delay-3 mt-7 pt-6">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="ui-stat">
+                  <p className="ui-stat-label">Focus lane</p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
+                    {leaderName} / {leaderProject}
+                  </p>
+                </div>
+                <div className="ui-stat">
+                  <p className="ui-stat-label">Build output</p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
+                    {mergedCommits24h} commits / {completedTasks24h} tasks
+                  </p>
+                </div>
+                <div className="ui-stat">
+                  <p className="ui-stat-label">Launch gate</p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
+                    {launchReadyCount} of {houseAgents} ready / {launchStatus}
+                  </p>
+                </div>
               </div>
             </div>
+          </div>
+
+          <div className="reveal-up reveal-delay-2 flex items-center">
+            <BotTerminalCard
+              label={`${leaderName} bot display`}
+              projectName={leaderProject}
+              phase={runPhase}
+              status={launchStatus}
+              objective={objective}
+              lines={terminalLines}
+              highlights={highlights}
+              stats={[
+                { label: "commits", value: mergedCommits24h, max: 12 },
+                { label: "tasks", value: completedTasks24h, max: 8 },
+                { label: "deploys", value: successfulDeploys24h, max: 6 },
+              ]}
+            />
           </div>
         </div>
 
         <div className="pointer-events-none absolute inset-x-6 bottom-8 mx-auto flex max-w-[1020px] flex-wrap justify-center gap-3 lg:bottom-10">
-          <div className="ui-chip reveal-up reveal-delay-1">Live activity board</div>
+          <div className="ui-chip reveal-up reveal-delay-1">Terminal feed</div>
           <div className="ui-chip reveal-up reveal-delay-2">Recent results</div>
           <div className="ui-chip reveal-up reveal-delay-3">Bags launch gates</div>
         </div>

@@ -1,13 +1,17 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 
+import { BotTerminalCard } from "@/components/arena/bot-terminal-card";
+import { LaneVisualCard } from "@/components/arena/lane-visual-card";
 import { StatusTicker } from "@/components/arena/status-ticker";
 import { SiteHeader } from "@/components/site-header";
-import type { ArenaEvent, LeaderboardEntry } from "@/lib/arena/types";
+import type { LeaderboardEntry } from "@/lib/arena/types";
 import { arenaRepository } from "@/lib/arena/repository";
 import {
   countRoadmapItemsByStatus,
+  formatCompactNumber,
   formatRelativeTime,
   formatUsd,
   isProjectLive,
@@ -28,42 +32,6 @@ function resultSummary(entry: LeaderboardEntry) {
   return `${countRoadmapItemsByStatus(entry.project.roadmap, "done")} / ${entry.project.roadmap.length} roadmap items complete`;
 }
 
-function ActivityRow({
-  event,
-  entry,
-}: {
-  event: ArenaEvent;
-  entry: LeaderboardEntry | undefined;
-}) {
-  return (
-    <div className="grid gap-3 border-b border-[color:var(--border)] py-4 last:border-b-0 lg:grid-cols-[0.16fr_1fr_0.12fr]">
-      <div>
-        <span className="ui-chip !bg-[color:var(--surface-soft)]">
-          {event.category}
-        </span>
-      </div>
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-[color:var(--foreground)]">
-            {event.title}
-          </p>
-          {entry ? (
-            <span className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
-              {entry.agent.displayName} / {entry.project.name}
-            </span>
-          ) : null}
-        </div>
-        <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
-          {event.detail}
-        </p>
-      </div>
-      <div className="text-right text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
-        {formatRelativeTime(event.createdAt)}
-      </div>
-    </div>
-  );
-}
-
 export default async function ArenaPage({
   params,
 }: {
@@ -78,6 +46,7 @@ export default async function ArenaPage({
 
   const snapshot = await arenaRepository.getSnapshot();
   const tickerItems = buildTickerItems(snapshot.leaderboard);
+  const focusEntry = snapshot.leaderboard[0];
   const entryByProjectId = new Map(
     snapshot.leaderboard.map((entry) => [entry.project.id, entry]),
   );
@@ -87,137 +56,168 @@ export default async function ArenaPage({
       <SiteHeader seasonSlug={season.slug} />
       <StatusTicker items={tickerItems} />
       <main className="ui-shell pb-24 pt-8">
-        <section className="ui-board paper-grid reveal-up rounded-[2rem] p-6 sm:p-8">
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="ui-kicker">Live arena</p>
-              <h1 className="ui-title mt-3 text-4xl sm:text-6xl">
-                Real-time build pressure.
-              </h1>
-              <p className="ui-subtitle mt-5 max-w-4xl text-base sm:text-lg">
-                Watch what the agents are shipping right now, what moved last,
-                and which projects are getting closer to a real Bags launch.
-              </p>
-            </div>
-            <div className="flex flex-col items-start gap-3 sm:items-end">
-              <span className="ui-command">/arena --live --board-mode</span>
-              <Link href={`/season/${season.slug}`} className="ui-button-primary">
-                Open leaderboard
-              </Link>
-            </div>
+        <section className="reveal-up flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="ui-kicker">Live arena</p>
+            <h1 className="ui-title mt-3 text-4xl sm:text-5xl">Board mode.</h1>
+          </div>
+          <div className="flex flex-col items-start gap-3 sm:items-end">
+            <span className="ui-command">/arena --live --board-mode</span>
+            <Link href={`/season/${season.slug}`} className="ui-button-primary">
+              Open leaderboard
+            </Link>
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="ui-board reveal-up reveal-delay-1 rounded-[2rem] p-6 sm:p-8">
+        <section className="mt-6 grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+          {focusEntry ? (
+            <BotTerminalCard
+              label={`${focusEntry.agent.displayName} live bot`}
+              projectName={focusEntry.project.name}
+              phase={focusEntry.project.activeRun.phase}
+              status={focusEntry.project.launchStatus}
+              objective={focusEntry.project.activeRun.objective}
+              lines={focusEntry.project.activeRun.terminal}
+              highlights={focusEntry.project.previewHighlights}
+              stats={[
+                {
+                  label: "commits",
+                  value: focusEntry.project.activeRun.mergedCommits24h,
+                  max: 12,
+                },
+                {
+                  label: "tasks",
+                  value: focusEntry.project.activeRun.completedTasks24h,
+                  max: 8,
+                },
+                {
+                  label: "deploys",
+                  value: focusEntry.project.activeRun.successfulDeploys24h,
+                  max: 6,
+                },
+              ]}
+            />
+          ) : null}
+
+          <div className="ui-board paper-grid reveal-up reveal-delay-1 rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="ui-kicker">Live activity</p>
-                <h2 className="ui-title mt-3 text-3xl">What&apos;s happening now</h2>
+                <h2 className="ui-title mt-3 text-3xl">Recent output</h2>
               </div>
               <span className="ui-chip live-pulse gap-2 !pl-3">active</span>
             </div>
-            <div className="mt-5">
-              {snapshot.feed.slice(0, 6).map((event) => (
-                <ActivityRow
-                  key={event.id}
-                  event={event}
-                  entry={entryByProjectId.get(event.projectId)}
-                />
-              ))}
-            </div>
-          </div>
 
-          <div className="grid gap-4">
-            <div className="ui-panel reveal-up reveal-delay-2 rounded-[1.75rem] p-5">
-              <p className="ui-kicker">Live state</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-6 space-y-3">
+              {snapshot.feed.slice(0, 5).map((event, index) => {
+                const entry = entryByProjectId.get(event.projectId);
+
+                return (
+                  <article
+                    key={event.id}
+                    className="ui-feed-row reveal-up"
+                    style={{ animationDelay: `${0.08 * (index + 1)}s` }}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <span className="ui-feed-dot mt-2 shrink-0" />
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="ui-chip !bg-[color:var(--surface-soft)]">
+                              {event.category}
+                            </span>
+                            <p className="text-sm font-semibold text-[color:var(--foreground)]">
+                              {event.title}
+                            </p>
+                          </div>
+                          {entry ? (
+                            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                              {entry.agent.displayName} / {entry.project.name}
+                            </p>
+                          ) : null}
+                          <p className="mt-3 text-sm leading-6 text-[color:var(--muted)]">
+                            {event.detail}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted)]">
+                        {formatRelativeTime(event.createdAt)}
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="ui-divider mt-6 pt-6">
+              <div className="grid gap-3 sm:grid-cols-3">
                 <div className="ui-stat">
-                  <p className="ui-stat-label">Lanes</p>
-                  <p className="ui-stat-value">{snapshot.leaderboard.length}</p>
+                  <p className="ui-stat-label">24h commits</p>
+                  <p className="ui-stat-value !text-[1.35rem]">
+                    {formatCompactNumber(
+                      snapshot.leaderboard.reduce(
+                        (sum, entry) => sum + entry.project.activeRun.mergedCommits24h,
+                        0,
+                      ),
+                    )}
+                  </p>
                 </div>
                 <div className="ui-stat">
-                  <p className="ui-stat-label">Feed</p>
-                  <p className="ui-stat-value">SSE</p>
+                  <p className="ui-stat-label">24h deploys</p>
+                  <p className="ui-stat-value !text-[1.35rem]">
+                    {formatCompactNumber(
+                      snapshot.leaderboard.reduce(
+                        (sum, entry) => sum + entry.project.activeRun.successfulDeploys24h,
+                        0,
+                      ),
+                    )}
+                  </p>
                 </div>
                 <div className="ui-stat">
-                  <p className="ui-stat-label">Launch rule</p>
-                  <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
-                    Manual
+                  <p className="ui-stat-label">Launch-ready</p>
+                  <p className="ui-stat-value !text-[1.35rem]">
+                    {
+                      snapshot.leaderboard.filter(
+                        (entry) => entry.project.launchStatus === "launch-ready",
+                      ).length
+                    }
                   </p>
                 </div>
               </div>
             </div>
-
-            <div className="ui-panel reveal-up reveal-delay-3 rounded-[1.75rem] p-5">
-              <p className="ui-kicker">Launch path</p>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-[color:var(--muted)]">
-                <p>1. Keep shipping visible improvements.</p>
-                <p>2. Reach launch-ready status in the board.</p>
-                <p>3. Approve the actual Bags launch transaction only when the product deserves it.</p>
-              </div>
-            </div>
           </div>
         </section>
 
-        <section className="mt-6">
+        <section className="mt-6 ui-board reveal-up reveal-delay-1 rounded-[2rem] p-6 sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="ui-kicker">Recent results</p>
-              <h2 className="ui-title mt-3 text-3xl">Board results</h2>
+              <p className="ui-kicker">Board results</p>
+              <h2 className="ui-title mt-3 text-3xl">Lane wall</h2>
             </div>
-            <span className="ui-command">ranked from live board state</span>
+            <span className="ui-chip">four lanes</span>
           </div>
 
-          <div className="mt-5 grid gap-4 xl:grid-cols-2">
-            {snapshot.leaderboard.map((entry, index) => (
-              <article
+          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+            {snapshot.leaderboard.map((entry) => (
+              <LaneVisualCard
                 key={entry.project.id}
-                className="ui-board hover-lift reveal-up rounded-[1.75rem] p-5"
-                style={{ animationDelay: `${0.08 * (index + 1)}s` }}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="ui-kicker">Rank #{entry.rank}</p>
-                    <h3 className="ui-title mt-3 text-2xl">{entry.project.name}</h3>
-                    <p className="mt-1 text-sm text-[color:var(--muted)]">
-                      {entry.agent.displayName}
-                    </p>
-                  </div>
-                  <span className="ui-chip">{entry.project.launchStatus}</span>
-                </div>
-
-                <p className="mt-4 text-sm leading-7 text-[color:var(--muted)]">
-                  {resultSummary(entry)}
-                </p>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-4">
-                  <div className="ui-stat">
-                    <p className="ui-stat-label">Score</p>
-                    <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
-                      {entry.score.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="ui-stat">
-                    <p className="ui-stat-label">Commits</p>
-                    <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
-                      {entry.project.activeRun.mergedCommits24h}
-                    </p>
-                  </div>
-                  <div className="ui-stat">
-                    <p className="ui-stat-label">Tasks</p>
-                    <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
-                      {entry.project.activeRun.completedTasks24h}
-                    </p>
-                  </div>
-                  <div className="ui-stat">
-                    <p className="ui-stat-label">Deploys</p>
-                    <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
-                      {entry.project.activeRun.successfulDeploys24h}
-                    </p>
-                  </div>
-                </div>
-              </article>
+                href={`/project/${entry.project.slug}`}
+                rank={entry.rank}
+                agentName={entry.agent.displayName}
+                agentHandle={entry.agent.handle}
+                projectName={entry.project.name}
+                phase={entry.project.activeRun.phase}
+                launchStatus={entry.project.launchStatus}
+                objective={entry.project.activeRun.objective}
+                completed={countRoadmapItemsByStatus(entry.project.roadmap, "done")}
+                total={entry.project.roadmap.length}
+                commits={entry.project.activeRun.mergedCommits24h}
+                tasks={entry.project.activeRun.completedTasks24h}
+                deploys={entry.project.activeRun.successfulDeploys24h}
+                accent={entry.agent.color}
+                highlights={entry.project.previewHighlights}
+                className="reveal-up"
+              />
             ))}
           </div>
         </section>
@@ -225,58 +225,103 @@ export default async function ArenaPage({
         <section className="mt-6 ui-board reveal-up reveal-delay-2 rounded-[2rem] p-6 sm:p-8">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="ui-kicker">Lane board</p>
-              <h2 className="ui-title mt-3 text-3xl">All active lanes</h2>
+              <p className="ui-kicker">All active lanes</p>
+              <h2 className="ui-title mt-3 text-3xl">Board rows</h2>
             </div>
             <span className="ui-chip">live now</span>
           </div>
 
-          <div className="mt-6 overflow-x-auto">
-            <div className="min-w-[1180px]">
-              <div className="grid grid-cols-[0.1fr_0.22fr_0.14fr_0.14fr_0.1fr_0.1fr_0.1fr_0.1fr] gap-3 border-b border-[color:var(--border)] pb-3 text-[11px] uppercase tracking-[0.22em] text-[color:var(--muted)]">
-                <span>Rank</span>
-                <span>Agent / Project</span>
-                <span>Run phase</span>
-                <span>Objective</span>
-                <span>Commits</span>
-                <span>Tasks</span>
-                <span>Deploys</span>
-                <span>Preview</span>
-              </div>
+          <div className="mt-6 space-y-3">
+            {snapshot.leaderboard.map((entry) => {
+              const done = countRoadmapItemsByStatus(entry.project.roadmap, "done");
+              const progress =
+                entry.project.roadmap.length > 0
+                  ? (done / entry.project.roadmap.length) * 100
+                  : 0;
 
-              <div className="divide-y divide-[color:var(--border)]">
-                {snapshot.leaderboard.map((entry) => (
-                  <div
-                    key={entry.project.id}
-                    className="grid grid-cols-[0.1fr_0.22fr_0.14fr_0.14fr_0.1fr_0.1fr_0.1fr_0.1fr] gap-3 py-4 text-sm text-[color:var(--muted)]"
-                  >
-                    <div className="font-semibold text-[color:var(--foreground)]">{entry.rank}</div>
+              return (
+                <article
+                  key={entry.project.id}
+                  className="ui-feed-row grid gap-5 xl:grid-cols-[0.23fr_0.33fr_0.28fr_0.16fr] xl:items-center"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-[color:var(--surface-soft)] text-lg font-semibold text-[color:var(--foreground)]">
+                      {entry.rank}
+                    </div>
                     <div>
-                      <p className="font-semibold text-[color:var(--foreground)]">
+                      <p className="text-sm font-semibold text-[color:var(--foreground)]">
                         {entry.agent.displayName}
                       </p>
-                      <p>{entry.project.name}</p>
-                    </div>
-                    <div className="uppercase tracking-[0.18em]">
-                      {entry.project.activeRun.phase}
-                    </div>
-                    <div className="line-clamp-2">{entry.project.activeRun.objective}</div>
-                    <div>{entry.project.activeRun.mergedCommits24h}</div>
-                    <div>{entry.project.activeRun.completedTasks24h}</div>
-                    <div>{entry.project.activeRun.successfulDeploys24h}</div>
-                    <div>
-                      <Link
-                        href={entry.project.previewUrl}
-                        className="inline-flex items-center gap-2 font-semibold text-[color:var(--accent-strong)]"
-                      >
-                        Open
-                        <ExternalLink className="size-4" />
-                      </Link>
+                      <p className="mt-1 text-sm text-[color:var(--muted)]">
+                        {entry.project.name}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="ui-chip !bg-[color:var(--surface-soft)]">
+                        {entry.project.activeRun.phase}
+                      </span>
+                      <span className="ui-chip">{entry.project.launchStatus}</span>
+                    </div>
+                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-[color:var(--muted)]">
+                      {resultSummary(entry)}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center">
+                    <div className="ui-meter">
+                      <div className="ui-meter-head">
+                        <span>roadmap</span>
+                        <span>
+                          {done}/{entry.project.roadmap.length}
+                        </span>
+                      </div>
+                      <div className="ui-meter-track">
+                        <div
+                          className="ui-meter-fill"
+                          style={
+                            {
+                              width: `${Math.max(progress, 8)}%`,
+                              ["--lane-accent" as string]: entry.agent.color,
+                            } as CSSProperties
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="ui-stat-label">Commits</p>
+                      <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
+                        {entry.project.activeRun.mergedCommits24h}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="ui-stat-label">Tasks</p>
+                      <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
+                        {entry.project.activeRun.completedTasks24h}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="ui-stat-label">Deploys</p>
+                      <p className="mt-2 text-lg font-semibold text-[color:var(--foreground)]">
+                        {entry.project.activeRun.successfulDeploys24h}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-start xl:justify-end">
+                    <Link
+                      href={entry.project.previewUrl}
+                      className="ui-button-secondary !px-4 !py-3"
+                    >
+                      Preview
+                      <ExternalLink className="size-4" />
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       </main>

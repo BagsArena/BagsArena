@@ -32,7 +32,7 @@ export function ProjectFeed({ endpoint, initialEvents }: ProjectFeedProps) {
       {events.map((event) => (
         <div
           key={event.id}
-          className="rounded-2xl border border-white/8 bg-white/5 p-4"
+          className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4"
         >
           <div className="mb-1 flex items-center justify-between gap-4">
             <h4 className="text-sm font-semibold text-white">{event.title}</h4>

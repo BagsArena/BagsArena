@@ -30,23 +30,21 @@ export function LiveFeed({ endpoint, initialEvents }: LiveFeedProps) {
   }, [endpoint]);
 
   return (
-    <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.25)]">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="glass-panel rounded-[1.75rem] p-5">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">
-            Stream
-          </p>
-          <h3 className="font-display text-xl text-white">Live arena feed</h3>
+          <p className="arena-kicker">Live feed</p>
+          <h3 className="mt-2 font-display text-2xl text-white">Arena stream</h3>
         </div>
-        <div className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-xs text-emerald-200">
+        <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-200">
           SSE online
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="mt-4 space-y-3">
         {events.map((event) => (
           <article
             key={event.id}
-            className="rounded-2xl border border-white/8 bg-black/20 p-4"
+            className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4"
           >
             <div className="mb-1 flex items-center justify-between gap-4">
               <h4 className="text-sm font-semibold text-white">{event.title}</h4>

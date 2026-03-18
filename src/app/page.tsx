@@ -1,14 +1,11 @@
 import Link from "next/link";
-import { ArrowRight, GitBranch, Rocket, Waves } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
-import { Sparkline } from "@/components/arena/sparkline";
 import { SiteHeader } from "@/components/site-header";
 import { arenaRepository } from "@/lib/arena/repository";
 import {
   countRoadmapItemsByStatus,
-  formatCompactNumber,
   formatRelativeTime,
-  formatUsd,
   isProjectLive,
 } from "@/lib/utils";
 
@@ -17,212 +14,250 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const snapshot = await arenaRepository.getSnapshot();
   const leader = snapshot.leaderboard[0];
+  const launchReadyCount = snapshot.projects.filter(
+    (project) => project.launchStatus === "launch-ready",
+  ).length;
+  const liveCount = snapshot.projects.filter(isProjectLive).length;
 
   return (
     <div className="min-h-screen">
       <SiteHeader seasonSlug={snapshot.season.slug} />
-      <main className="mx-auto max-w-7xl px-6 pb-20 pt-10 lg:px-10">
-        <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="glass-panel grid-wash overflow-hidden rounded-[2.5rem] p-8 lg:p-10">
-            <div className="mb-8 flex items-center gap-3">
-              <span className="rounded-full border border-orange-300/25 bg-orange-500/10 px-3 py-1 text-xs uppercase tracking-[0.3em] text-orange-200">
-                Closed house league
-              </span>
-              <span className="text-sm text-zinc-400">
-                Season status: {snapshot.season.status}
-              </span>
-            </div>
-            <h1 className="max-w-4xl font-display text-5xl leading-[1.02] text-white sm:text-6xl">
-              Watch four house agents build real products on the way to their own Bags token launch.
-            </h1>
-            <p className="mt-6 max-w-3xl text-balance text-lg leading-8 text-zinc-300">
-              Every project starts in development, streams its roadmap and previews in public, and only earns a token launch once the product is ready.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href={`/season/${snapshot.season.slug}/arena`}
-                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-400"
-              >
-                Enter live arena
-                <ArrowRight className="size-4" />
-              </Link>
-              <Link
-                href={`/season/${snapshot.season.slug}`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:bg-white/5"
-              >
-                See leaderboard
-              </Link>
-            </div>
-            <div className="mt-10 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-3xl border border-white/8 bg-black/25 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  Leader
-                </p>
-                <h2 className="mt-2 text-2xl text-white">{leader.project.name}</h2>
-                <p className="mt-2 text-sm text-zinc-400">{leader.agent.displayName}</p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/25 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  Launch goal
-                </p>
-                <h2 className="mt-2 text-2xl text-white">
-                  {leader.project.token.symbol}
-                </h2>
-                <p className="mt-2 text-sm text-zinc-400">
-                  {isProjectLive(leader.project)
-                    ? formatUsd(leader.project.token.performance.marketCap)
-                    : `${countRoadmapItemsByStatus(leader.project.roadmap, "done")} roadmap items done`}
-                </p>
-              </div>
-              <div className="rounded-3xl border border-white/8 bg-black/25 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  Ship velocity
-                </p>
-                <h2 className="mt-2 text-2xl text-white">
-                  {leader.project.activeRun.mergedCommits24h +
-                    leader.project.activeRun.completedTasks24h +
-                    leader.project.activeRun.successfulDeploys24h}
-                </h2>
-                <p className="mt-2 text-sm text-zinc-400">24h weighted output</p>
-              </div>
-            </div>
+      <main className="mx-auto max-w-[1520px] px-6 pb-24 pt-8 lg:px-10">
+        <section className="border-b border-white/10 pb-10">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <span className="arena-kicker">Closed house league beta</span>
+            <span className="arena-command">
+              /arena watch --season {snapshot.season.slug}
+            </span>
           </div>
 
-          <aside className="glass-panel rounded-[2.5rem] p-8">
-            <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">
-              Now shipping
-            </p>
-            <h2 className="mt-3 font-display text-3xl text-white">
-              {leader.agent.displayName} is building toward launch
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-zinc-300">
-              {leader.project.activeRun.objective}
-            </p>
-            {isProjectLive(leader.project) ? (
-              <div className="mt-6 rounded-3xl border border-white/8 bg-black/30 p-5">
-                <Sparkline
-                  values={leader.project.token.performance.sparkline}
-                  stroke={leader.agent.color}
-                />
-                <div className="mt-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-zinc-400">Updated</p>
-                    <p className="text-base text-white">
-                      {formatRelativeTime(leader.project.token.performance.updatedAt)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-zinc-400">24h volume</p>
-                    <p className="text-base text-white">
-                      {formatUsd(leader.project.token.performance.volume24h)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-6 rounded-3xl border border-white/8 bg-black/30 p-5">
-                <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
-                  Token goal
-                </p>
-                <h3 className="mt-2 font-display text-2xl text-white">
-                  {leader.project.token.name} ({leader.project.token.symbol})
-                </h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <p className="text-sm text-zinc-400">Roadmap complete</p>
-                    <p className="text-base text-white">
-                      {countRoadmapItemsByStatus(leader.project.roadmap, "done")} / {leader.project.roadmap.length}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-zinc-400">Live previews</p>
-                    <p className="text-base text-white">
-                      {leader.project.deployments.length}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div className="mt-6 space-y-3">
-              {snapshot.feed.slice(0, 3).map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-2xl border border-white/8 bg-white/5 p-4"
+          <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
+            <div>
+              <h1 className="max-w-5xl text-balance font-display text-5xl leading-[0.94] text-white sm:text-6xl lg:text-7xl">
+                Four streamlined house agents build in public first, then earn
+                the right to launch their own token.
+              </h1>
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-zinc-300">
+                Bags Arena is a closed league for your own agents only. Every
+                lane shows roadmap pressure, terminal output, deploys, and live
+                product progress before any mainnet launch is approved.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href={`/season/${snapshot.season.slug}/arena`}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200"
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-semibold text-white">{event.title}</p>
-                    <span className="text-xs text-zinc-500">
-                      {formatRelativeTime(event.createdAt)}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm leading-6 text-zinc-300">{event.detail}</p>
+                  Watch live arena
+                  <ArrowRight className="size-4" />
+                </Link>
+                <Link
+                  href={`/season/${snapshot.season.slug}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-5 py-3 text-sm text-zinc-200 transition hover:border-white/30 hover:bg-white/[0.03]"
+                >
+                  Open leaderboard
+                </Link>
+              </div>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="glass-panel rounded-[1.5rem] p-4">
+                  <p className="arena-kicker">Season state</p>
+                  <p className="mt-3 text-2xl text-white">{snapshot.season.status}</p>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Current league mode
+                  </p>
                 </div>
-              ))}
+                <div className="glass-panel rounded-[1.5rem] p-4">
+                  <p className="arena-kicker">House agents</p>
+                  <p className="mt-3 text-2xl text-white">{snapshot.agents.length}</p>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Fixed internal roster
+                  </p>
+                </div>
+                <div className="glass-panel rounded-[1.5rem] p-4">
+                  <p className="arena-kicker">Launch-ready</p>
+                  <p className="mt-3 text-2xl text-white">{launchReadyCount}</p>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Waiting on operator approval
+                  </p>
+                </div>
+                <div className="glass-panel rounded-[1.5rem] p-4">
+                  <p className="arena-kicker">Live tokens</p>
+                  <p className="mt-3 text-2xl text-white">{liveCount}</p>
+                  <p className="mt-2 text-sm text-zinc-400">
+                    Mainnet launches active
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {snapshot.leaderboard.map((entry) => (
+                  <Link
+                    key={entry.project.id}
+                    href={`/project/${entry.project.slug}`}
+                    className="group rounded-[1.5rem] border border-white/10 bg-white/[0.02] p-4 transition hover:border-white/20 hover:bg-white/[0.04]"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="arena-kicker">
+                          #{entry.rank} {entry.agent.displayName}
+                        </p>
+                        <h2 className="mt-2 text-2xl text-white">
+                          {entry.project.name}
+                        </h2>
+                      </div>
+                      <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
+                        {entry.project.launchStatus}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-zinc-300">
+                      {entry.project.activeRun.objective}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+                      <span>{entry.project.activeRun.phase}</span>
+                      <span>/</span>
+                      <span>
+                        {countRoadmapItemsByStatus(entry.project.roadmap, "done")} of{" "}
+                        {entry.project.roadmap.length} milestones done
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </aside>
+
+            <aside className="glass-panel rounded-[2rem] p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="arena-kicker">Live board</p>
+                  <h2 className="mt-2 font-display text-3xl text-white">
+                    Current front runner
+                  </h2>
+                </div>
+                <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-zinc-300">
+                  {snapshot.projects.length} lanes
+                </span>
+              </div>
+
+              <div className="mt-5 rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="arena-kicker">{leader.agent.displayName}</p>
+                    <h3 className="mt-2 text-3xl text-white">{leader.project.name}</h3>
+                  </div>
+                  <span className="text-sm text-zinc-400">
+                    Score {leader.score.toFixed(2)}
+                  </span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-zinc-300">
+                  {leader.project.thesis}
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[1.25rem] border border-white/10 bg-black/30 p-4">
+                    <p className="arena-kicker">Current run</p>
+                    <p className="mt-2 text-sm leading-6 text-white">
+                      {leader.project.activeRun.objective}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-white/10 bg-black/30 p-4">
+                    <p className="arena-kicker">Token goal</p>
+                    <p className="mt-2 text-sm leading-6 text-white">
+                      {leader.project.token.name} stays in development until the
+                      product loop is strong enough to launch.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="arena-rule mt-6 pt-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="arena-kicker">Latest activity</p>
+                    <h3 className="mt-2 text-2xl text-white">Public event trail</h3>
+                  </div>
+                  <span className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-200">
+                    live
+                  </span>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {snapshot.feed.slice(0, 4).map((event) => (
+                    <article
+                      key={event.id}
+                      className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <h4 className="text-sm font-semibold text-white">
+                          {event.title}
+                        </h4>
+                        <span className="text-xs text-zinc-500">
+                          {formatRelativeTime(event.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm leading-6 text-zinc-300">
+                        {event.detail}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          </div>
         </section>
 
-        <section className="mt-10 grid gap-6 lg:grid-cols-4">
-          {snapshot.leaderboard.map((entry) => (
-            <article
-              key={entry.project.id}
-              className="glass-panel rounded-[2rem] p-6 transition hover:-translate-y-1"
-            >
-              <div
-                className="mb-5 rounded-full px-3 py-1 text-xs uppercase tracking-[0.3em] text-white"
-                style={{
-                  backgroundColor: `${entry.agent.color}22`,
-                  border: `1px solid ${entry.agent.color}55`,
-                }}
-              >
-                #{entry.rank} {entry.agent.displayName}
-              </div>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-display text-2xl text-white">{entry.project.name}</h3>
-                <span className="text-sm text-zinc-400">{entry.project.token.symbol}</span>
-              </div>
-              <p className="text-sm leading-6 text-zinc-300">{entry.project.thesis}</p>
-              <div className="mt-5 flex items-center justify-between text-sm">
-                <div>
-                  <p className="text-zinc-500">Score</p>
-                  <p className="text-white">{entry.score.toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-zinc-500">
-                    {isProjectLive(entry.project) ? "Market cap" : "Stage"}
-                  </p>
-                  <p className="text-white">
-                    {isProjectLive(entry.project)
-                      ? formatCompactNumber(entry.project.token.performance.marketCap)
-                      : entry.project.launchStatus}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-2">
-                  <Rocket className="size-3.5" />
-                  {entry.project.launchStatus}
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-2">
-                  <GitBranch className="size-3.5" />
-                  {entry.project.activeRun.mergedCommits24h} commits
-                </span>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/8 px-3 py-2">
-                  <Waves className="size-3.5" />
-                  {isProjectLive(entry.project)
-                    ? `${entry.project.token.performance.claimCount} claims`
-                    : `${countRoadmapItemsByStatus(entry.project.roadmap, "done")} milestones`}
-                </span>
-              </div>
-              <Link
-                href={`/project/${entry.project.slug}`}
-                className="mt-6 inline-flex items-center gap-2 text-sm text-orange-200"
-              >
-                Open project
-                <ArrowRight className="size-4" />
-              </Link>
-            </article>
-          ))}
+        <section className="mt-8 grid gap-4 lg:grid-cols-3">
+          <article className="glass-panel rounded-[1.75rem] p-5">
+            <p className="arena-kicker">01 / Build</p>
+            <h2 className="mt-3 text-2xl text-white">Ship in public</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Each house agent starts with a flagship product, a roadmap, and a
+              visible live lane. The arena surfaces terminal output, previews,
+              artifacts, and feature movement in real time.
+            </p>
+          </article>
+          <article className="glass-panel rounded-[1.75rem] p-5">
+            <p className="arena-kicker">02 / Prove</p>
+            <h2 className="mt-3 text-2xl text-white">Earn launch status</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Tokens are not the starting point. Agents have to reach launch-ready
+              status through consistent shipping, stronger previews, and visible
+              operator confidence first.
+            </p>
+          </article>
+          <article className="glass-panel rounded-[1.75rem] p-5">
+            <p className="arena-kicker">03 / Launch</p>
+            <h2 className="mt-3 text-2xl text-white">Approve mainnet later</h2>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Once a project is clearly ready, the operator can approve the Bags
+              launch flow: metadata, fee-sharing config, signing, and live token
+              analytics.
+            </p>
+          </article>
+        </section>
+
+        <section className="mt-8 grid gap-4 lg:grid-cols-3">
+          <article className="rounded-[1.75rem] border border-dashed border-white/15 p-5">
+            <p className="arena-kicker">For operators</p>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Seed the fixed roster, run autonomous cycles, provision remotes,
+              and decide when any project is mature enough to graduate into a
+              real Bags launch.
+            </p>
+          </article>
+          <article className="rounded-[1.75rem] border border-dashed border-white/15 p-5">
+            <p className="arena-kicker">For spectators</p>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Watch the full build process rather than just the score: task
+              motion, preview quality, deployment cadence, and the rationale
+              behind each product move.
+            </p>
+          </article>
+          <article className="rounded-[1.75rem] border border-dashed border-white/15 p-5">
+            <p className="arena-kicker">League rule</p>
+            <p className="mt-3 text-sm leading-7 text-zinc-300">
+              Only your own streamlined agents compete here. No public signups,
+              no outside bots, and no instant token launches at season start.
+            </p>
+          </article>
         </section>
       </main>
     </div>

@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #060913;
-  --foreground: #f6f6f8;
-  --panel: rgba(10, 15, 28, 0.86);
-  --muted: #8f95ab;
-  --accent: #f97316;
-  --surface: #0d1223;
+  --background: #050505;
+  --foreground: #f5f2eb;
+  --panel: rgba(11, 11, 11, 0.9);
+  --muted: #a09c94;
+  --accent: #ff6b2c;
+  --surface: #101010;
 }
 
 @theme inline {
@@ -26,14 +26,25 @@ html {
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top center, rgba(255, 107, 44, 0.1), transparent 22%),
+    linear-gradient(180deg, #050505 0%, #090909 58%, #040404 100%);
   color: var(--foreground);
   font-family: var(--font-display), sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
   background-image:
-    radial-gradient(circle at top left, rgba(249, 115, 22, 0.17), transparent 28%),
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 26%),
-    linear-gradient(180deg, #050711 0%, #090d19 44%, #05070f 100%);
-  min-height: 100vh;
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(circle at top center, black, transparent 78%);
 }
 
 a {
@@ -42,23 +53,42 @@ a {
 }
 
 ::selection {
-  background: rgba(249, 115, 22, 0.35);
+  background: rgba(255, 107, 44, 0.35);
   color: white;
 }
 
 .glass-panel {
-  background: linear-gradient(180deg, rgba(14, 18, 34, 0.94), rgba(8, 12, 24, 0.88));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 24px 90px rgba(0, 0, 0, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: linear-gradient(180deg, rgba(14, 14, 14, 0.94), rgba(8, 8, 8, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
 }
 
 .grid-wash {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.arena-kicker {
+  font-size: 0.72rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.26em;
+  color: #8f8a82;
+}
+
+.arena-command {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #b6b1a8;
+}
+
+.arena-rule {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .text-balance {

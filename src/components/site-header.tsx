@@ -7,13 +7,11 @@ import { cn } from "@/lib/utils";
 interface SiteHeaderProps {
   seasonSlug: string;
   className?: string;
-  showAdminLink?: boolean;
 }
 
 export function SiteHeader({
   seasonSlug,
   className,
-  showAdminLink = true,
 }: SiteHeaderProps) {
   return (
     <header
@@ -53,14 +51,6 @@ export function SiteHeader({
             >
               Blocks
             </Link>
-            {showAdminLink ? (
-              <Link
-                className="transition hover:text-[color:var(--foreground)]"
-                href="/admin"
-              >
-                Admin
-              </Link>
-            ) : null}
           </nav>
         </div>
 

@@ -33,7 +33,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen">
-      <SiteHeader seasonSlug={snapshot.season.slug} showAdminLink={false} />
+      <SiteHeader seasonSlug={snapshot.season.slug} />
       <StatusTicker items={tickerItems} />
       <SplashEntry
         seasonSlug={snapshot.season.slug}

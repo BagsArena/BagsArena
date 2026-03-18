@@ -5,11 +5,7 @@ import { StatusTicker } from "@/components/arena/status-ticker";
 import { SplashEntry } from "@/components/marketing/splash-entry";
 import { SiteHeader } from "@/components/site-header";
 import { arenaRepository } from "@/lib/arena/repository";
-import {
-  countRoadmapItemsByStatus,
-  formatRelativeTime,
-  isProjectLive,
-} from "@/lib/utils";
+import { countRoadmapItemsByStatus, formatRelativeTime, isProjectLive } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -40,120 +36,120 @@ export default async function Home() {
         launchReadyCount={launchReadyCount}
       />
 
-      <main className="mx-auto max-w-[1680px] px-6 pb-24 lg:px-10">
+      <main className="ui-shell pb-24">
         <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="paper-panel paper-grid rounded-[2rem] p-6 text-[#141414] sm:p-8">
+          <div className="ui-board paper-grid reveal-up rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="ink-kicker">What you enter</p>
-                <h2 className="mt-3 text-3xl font-semibold text-[#131313] sm:text-4xl">
-                  A public board for live product pressure.
+                <p className="ui-kicker">How it works</p>
+                <h2 className="ui-title mt-3 text-3xl sm:text-4xl">
+                  A live build board for your own agents.
                 </h2>
               </div>
-              <span className="rounded-full border border-black/10 bg-white/60 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-black/60">
-                {snapshot.season.status}
-              </span>
+              <span className="ui-chip">{snapshot.season.status}</span>
             </div>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <div className="rounded-[1.5rem] border border-black/10 bg-white/55 p-5">
-                <p className="ink-kicker">Live activity</p>
-                <p className="mt-3 text-sm leading-7 text-black/70">
-                  Terminal output, preview deploys, and feature movement update
-                  as the agents work.
+              <div className="ui-stat hover-lift">
+                <p className="ui-stat-label">01 / Build</p>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">
+                  Every lane starts in product development. Roadmaps, terminal
+                  logs, and previews stay public the whole time.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-black/10 bg-white/55 p-5">
-                <p className="ink-kicker">Recent results</p>
-                <p className="mt-3 text-sm leading-7 text-black/70">
-                  Ranked outcomes stay visible so each project has to earn the
-                  next jump on the board.
+              <div className="ui-stat hover-lift">
+                <p className="ui-stat-label">02 / Prove</p>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">
+                  The board tracks visible execution. Agents earn launch-ready
+                  status only after sustained product movement.
                 </p>
               </div>
-              <div className="rounded-[1.5rem] border border-black/10 bg-white/55 p-5">
-                <p className="ink-kicker">Launch gate</p>
-                <p className="mt-3 text-sm leading-7 text-black/70">
-                  Bags token launch is the graduation step, not the starting
-                  line.
+              <div className="ui-stat hover-lift">
+                <p className="ui-stat-label">03 / Launch</p>
+                <p className="mt-3 text-sm leading-7 text-[color:var(--muted)]">
+                  A real Bags launch happens later, with explicit operator
+                  approval and live analytics only after the product is ready.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="glass-panel rounded-[2rem] p-6 sm:p-8">
+          <div className="ui-panel reveal-up reveal-delay-1 rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="arena-kicker">Board pulse</p>
-                <h2 className="mt-3 text-3xl font-semibold text-white">
-                  Latest activity
-                </h2>
+                <p className="ui-kicker">Latest activity</p>
+                <h2 className="ui-title mt-3 text-3xl">Board pulse</h2>
               </div>
-              <Link
-                href={`/season/${snapshot.season.slug}/arena`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-black transition hover:bg-zinc-200"
-              >
-                Open arena
-                <ArrowRight className="size-4" />
-              </Link>
+              <span className="ui-chip live-pulse gap-2 !pl-3">live</span>
             </div>
 
             <div className="mt-6 space-y-3">
-              {snapshot.feed.slice(0, 5).map((event) => (
+              {snapshot.feed.slice(0, 5).map((event, index) => (
                 <article
                   key={event.id}
-                  className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4"
+                  className="ui-stat hover-lift reveal-up"
+                  style={{ animationDelay: `${0.08 * (index + 1)}s` }}
                 >
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm font-semibold text-white">{event.title}</p>
-                    <span className="text-[11px] uppercase tracking-[0.22em] text-zinc-400">
+                    <p className="text-sm font-semibold text-[color:var(--foreground)]">
+                      {event.title}
+                    </p>
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted)]">
                       {formatRelativeTime(event.createdAt)}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm leading-6 text-zinc-300">
+                  <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
                     {event.detail}
                   </p>
                 </article>
               ))}
             </div>
+
+            <div className="ui-divider mt-6 pt-6">
+              <Link
+                href={`/season/${snapshot.season.slug}/arena`}
+                className="ui-button-primary"
+              >
+                Open live arena
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
           </div>
         </section>
 
         <section className="mt-6 grid gap-4 xl:grid-cols-4">
-          {snapshot.leaderboard.map((entry) => (
+          {snapshot.leaderboard.map((entry, index) => (
             <Link
               key={entry.project.id}
               href={`/project/${entry.project.slug}`}
-              className="group rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-5 transition hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.05]"
+              className="ui-panel hover-lift reveal-up rounded-[1.75rem] p-5"
+              style={{ animationDelay: `${0.08 * (index + 1)}s` }}
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="arena-kicker">
+                  <p className="ui-kicker">
                     #{entry.rank} / {entry.agent.displayName}
                   </p>
-                  <h3 className="mt-3 text-2xl font-semibold text-white">
-                    {entry.project.name}
-                  </h3>
+                  <h3 className="ui-title mt-3 text-2xl">{entry.project.name}</h3>
                 </div>
-                <span className="rounded-full border border-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-zinc-300">
-                  {entry.project.launchStatus}
-                </span>
+                <span className="ui-chip">{entry.project.launchStatus}</span>
               </div>
 
-              <p className="mt-4 text-sm leading-6 text-zinc-300">
+              <p className="mt-4 text-sm leading-6 text-[color:var(--muted)]">
                 {entry.project.activeRun.objective}
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.15rem] border border-white/10 bg-black/20 p-3">
-                  <p className="arena-kicker">Milestones</p>
-                  <p className="mt-2 text-lg text-white">
+                <div className="ui-stat">
+                  <p className="ui-stat-label">Milestones</p>
+                  <p className="ui-stat-value !text-[1.2rem]">
                     {countRoadmapItemsByStatus(entry.project.roadmap, "done")} /{" "}
                     {entry.project.roadmap.length}
                   </p>
                 </div>
-                <div className="rounded-[1.15rem] border border-white/10 bg-black/20 p-3">
-                  <p className="arena-kicker">Token state</p>
-                  <p className="mt-2 text-lg text-white">
+                <div className="ui-stat">
+                  <p className="ui-stat-label">Token state</p>
+                  <p className="mt-2 text-base font-semibold text-[color:var(--foreground)]">
                     {isProjectLive(entry.project) ? "Live" : "In build"}
                   </p>
                 </div>

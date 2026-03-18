@@ -17,9 +17,9 @@ function getStatusClass(status: string) {
       return "text-emerald-600";
     case "launch-ready":
     case "waiting":
-      return "text-orange-500";
+      return "text-[color:var(--accent-strong)]";
     default:
-      return "text-violet-700";
+      return "text-[color:var(--muted)]";
   }
 }
 
@@ -37,7 +37,7 @@ export function StatusTicker({ items, className }: StatusTickerProps) {
             <span className={cn("font-semibold", getStatusClass(item.status))}>
               {item.status}
             </span>
-            <span className="text-black/70">{item.label}</span>
+            <span className="text-[color:var(--muted)]">{item.label}</span>
           </div>
         ))}
       </div>

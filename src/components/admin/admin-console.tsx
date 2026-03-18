@@ -151,9 +151,7 @@ export function AdminConsole({ season, projects }: AdminConsoleProps) {
         const payload = await postJson("/api/admin/provision", {
           scope: "house-league",
         });
-        setStatus(
-          `Provisioned remotes for ${payload.projects.length} projects.`,
-        );
+        setStatus(`Provisioned remotes for ${payload.projects.length} projects.`);
       } catch (error) {
         setStatus(
           error instanceof Error ? error.message : "House league provisioning failed.",
@@ -208,50 +206,30 @@ export function AdminConsole({ season, projects }: AdminConsoleProps) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-      <section className="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-        <div className="mb-4 flex items-center justify-between">
+    <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="ui-panel reveal-up reveal-delay-1 rounded-[2rem] p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">
-              Operator rail
-            </p>
-            <h2 className="font-display text-2xl text-white">
-              Season and launch controls
-            </h2>
+            <p className="ui-kicker">Operator rail</p>
+            <h2 className="ui-title mt-3 text-3xl">Season and launch controls</h2>
           </div>
-          <button
-            type="button"
-            onClick={handleSeasonReset}
-            className="rounded-full border border-orange-300/35 bg-orange-500/10 px-4 py-2 text-sm text-orange-100 transition hover:bg-orange-500/20"
-          >
+          <button type="button" onClick={handleSeasonReset} className="ui-button-secondary">
             Refresh season state
           </button>
         </div>
         <div className="mb-5 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={handleHouseLeagueCycle}
-            className="rounded-full border border-fuchsia-300/35 bg-fuchsia-500/10 px-4 py-2 text-sm text-fuchsia-100 transition hover:bg-fuchsia-500/20"
-          >
+          <button type="button" onClick={handleHouseLeagueCycle} className="ui-button-primary">
             Run all four house agents
           </button>
-          <button
-            type="button"
-            onClick={handleHouseLeagueProvision}
-            className="rounded-full border border-amber-300/35 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/20"
-          >
+          <button type="button" onClick={handleHouseLeagueProvision} className="ui-button-secondary">
             Provision all remotes
           </button>
-          <button
-            type="button"
-            onClick={handleHouseLeagueMetricsRefresh}
-            className="rounded-full border border-emerald-300/35 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100 transition hover:bg-emerald-500/20"
-          >
+          <button type="button" onClick={handleHouseLeagueMetricsRefresh} className="ui-button-secondary">
             Refresh all token metrics
           </button>
         </div>
-        <div className="mb-5 rounded-3xl border border-white/8 bg-black/20 p-4">
-          <label className="mb-2 block text-xs uppercase tracking-[0.22em] text-zinc-500">
+        <div className="ui-stat mb-5">
+          <label className="mb-2 block text-xs uppercase tracking-[0.22em] text-[color:var(--muted)]">
             Admin token
           </label>
           <input
@@ -259,68 +237,47 @@ export function AdminConsole({ season, projects }: AdminConsoleProps) {
             value={adminToken}
             onChange={(event) => handleAdminTokenChange(event.target.value)}
             placeholder="Optional unless ARENA_ADMIN_TOKEN is set"
-            className="w-full rounded-2xl border border-white/10 bg-[#040815] px-4 py-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-orange-300/50"
+            className="ui-input"
           />
         </div>
         <div className="space-y-4">
-          {projects.map((project) => (
+          {projects.map((project, index) => (
             <article
               key={project.id}
-              className="rounded-3xl border border-white/8 bg-black/20 p-5"
+              className="ui-stat hover-lift reveal-up"
+              style={{ animationDelay: `${0.05 * (index + 1)}s` }}
             >
               <div className="mb-2 flex items-center justify-between gap-4">
                 <div>
-                  <h3 className="font-display text-xl text-white">
+                  <h3 className="text-xl font-semibold text-[color:var(--foreground)]">
                     {project.name}
                   </h3>
-                  <p className="text-sm text-zinc-400">{project.thesis}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-zinc-500">
+                  <p className="text-sm text-[color:var(--muted)]">{project.thesis}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">
                     Infra {project.infrastructure.status}
                   </p>
                 </div>
-                <div className="rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-zinc-400">
-                  {project.launchStatus}
-                </div>
+                <div className="ui-chip">{project.launchStatus}</div>
               </div>
               {project.infrastructure.notes.length > 0 ? (
-                <p className="mb-3 text-sm text-zinc-500">
+                <p className="mb-3 text-sm text-[color:var(--muted)]">
                   {project.infrastructure.notes[0]}
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleProjectProvision(project.id)}
-                  className="rounded-full border border-amber-300/35 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 transition hover:bg-amber-500/20"
-                >
+                <button type="button" onClick={() => handleProjectProvision(project.id)} className="ui-button-soft">
                   Provision remotes
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleProjectCycle(project.id)}
-                  className="rounded-full border border-fuchsia-300/35 bg-fuchsia-500/10 px-4 py-2 text-sm text-fuchsia-100 transition hover:bg-fuchsia-500/20"
-                >
+                <button type="button" onClick={() => handleProjectCycle(project.id)} className="ui-button-soft">
                   Run autonomous cycle
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleProjectMetricsRefresh(project.id)}
-                  className="rounded-full border border-emerald-300/35 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-100 transition hover:bg-emerald-500/20"
-                >
+                <button type="button" onClick={() => handleProjectMetricsRefresh(project.id)} className="ui-button-soft">
                   Refresh token metrics
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleLaunch(project.id)}
-                  className="rounded-full border border-cyan-300/35 bg-cyan-500/10 px-4 py-2 text-sm text-cyan-100 transition hover:bg-cyan-500/20"
-                >
+                <button type="button" onClick={() => handleLaunch(project.id)} className="ui-button-soft">
                   Approve mainnet launch
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleRetry(project.activeRun.id)}
-                  className="rounded-full border border-sky-300/35 bg-sky-500/10 px-4 py-2 text-sm text-sky-100 transition hover:bg-sky-500/20"
-                >
+                <button type="button" onClick={() => handleRetry(project.activeRun.id)} className="ui-button-soft">
                   Retry build cycle
                 </button>
               </div>
@@ -329,14 +286,10 @@ export function AdminConsole({ season, projects }: AdminConsoleProps) {
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-white/10 bg-black/25 p-6">
-        <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">
-          Response log
-        </p>
-        <h2 className="mb-4 font-display text-2xl text-white">Console status</h2>
-        <div className="rounded-3xl border border-white/8 bg-[#040815] p-5 font-mono text-sm leading-6 text-emerald-200 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.04)]">
-          {status}
-        </div>
+      <section className="ui-board reveal-up reveal-delay-2 rounded-[2rem] p-6">
+        <p className="ui-kicker">Response log</p>
+        <h2 className="ui-title mb-4 mt-3 text-3xl">Console status</h2>
+        <div className="ui-code min-h-40 text-sm leading-6">{status}</div>
       </section>
     </div>
   );

@@ -30,13 +30,15 @@ export function LiveFeed({ endpoint, initialEvents }: LiveFeedProps) {
   }, [endpoint]);
 
   return (
-    <div className="glass-panel rounded-[1.75rem] p-5">
+    <div className="paper-panel rounded-[1.75rem] p-5 text-[#131313]">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="arena-kicker">Live feed</p>
-          <h3 className="mt-2 font-display text-2xl text-white">Arena stream</h3>
+          <p className="ink-kicker">Live feed</p>
+          <h3 className="mt-2 text-2xl font-semibold text-[#131313]">
+            Arena stream
+          </h3>
         </div>
-        <div className="rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-200">
+        <div className="rounded-full border border-emerald-600/15 bg-emerald-50 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-emerald-700">
           SSE online
         </div>
       </div>
@@ -44,15 +46,15 @@ export function LiveFeed({ endpoint, initialEvents }: LiveFeedProps) {
         {events.map((event) => (
           <article
             key={event.id}
-            className="rounded-[1.25rem] border border-white/10 bg-white/[0.03] p-4"
+            className="rounded-[1.25rem] border border-black/10 bg-white/55 p-4"
           >
             <div className="mb-1 flex items-center justify-between gap-4">
-              <h4 className="text-sm font-semibold text-white">{event.title}</h4>
-              <span className="text-xs text-zinc-500">
+              <h4 className="text-sm font-semibold text-[#131313]">{event.title}</h4>
+              <span className="text-xs text-black/45">
                 {formatRelativeTime(event.createdAt)}
               </span>
             </div>
-            <p className="text-sm leading-6 text-zinc-300">{event.detail}</p>
+            <p className="text-sm leading-6 text-black/65">{event.detail}</p>
           </article>
         ))}
       </div>

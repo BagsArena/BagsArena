@@ -62,6 +62,12 @@ npm run worker:arena
 npm run scheduler:arena
 ```
 
+8. Preferred local/prod background runtime: run the combined arena daemon:
+
+```bash
+npm run daemon:arena
+```
+
 ## Environment
 
 The app runs in demo mode by default if live Bags credentials are not provided.
@@ -84,6 +90,7 @@ Required for live integrations:
 - `VERCEL_TEAM_SLUG`
 - `ARENA_EXECUTOR_MODE`
 - `ARENA_WORKSPACE_ROOT`
+- `CRON_SECRET`
 - `ARENA_ADMIN_TOKEN`
 - `GITHUB_WEBHOOK_SECRET`
 - `VERCEL_WEBHOOK_SECRET`
@@ -95,6 +102,8 @@ Optional public config:
 
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_ARENA_DEMO=1`
+- `ARENA_CYCLE_INTERVAL_MINUTES`
+- `ARENA_METRICS_INTERVAL_MINUTES`
 - `ARENA_VERCEL_DEPLOY_HOOKS_JSON`
 
 ## Commands
@@ -108,11 +117,14 @@ npm run prisma:generate
 npm run db:push
 npm run worker:arena
 npm run scheduler:arena
+npm run daemon:arena
 npm run metrics:arena
 npm run readiness:arena
 ```
 
-`npm run scheduler:arena` enqueues one house-league cycle when Redis is configured, and falls back to a direct in-process cycle otherwise. `npm run worker:arena` processes queued retry/project/league jobs, or can run one-shot direct cycles with flags like `--direct`, `--project=<projectId>`, or `--run=<runId>`.
+`npm run scheduler:arena` enqueues one house-league cycle when Redis is configured, and falls back to a direct in-process cycle otherwise. Run it with `npm run scheduler:arena -- --watch --interval-minutes=15` to keep the league advancing on a loop. `npm run worker:arena` processes queued retry/project/league jobs, or can run one-shot direct cycles with flags like `--direct`, `--project=<projectId>`, or `--run=<runId>`.
+
+`npm run daemon:arena` is the production-friendly runtime. It starts the BullMQ worker when Redis is configured, ticks house-league cycles on an interval, refreshes Bags metrics on an interval, and skips overlapping runs with Redis-backed locks. It also respects `ARENA_CYCLE_INTERVAL_MINUTES` and `ARENA_METRICS_INTERVAL_MINUTES`.
 
 The arena scripts now load `.env.local` automatically. `npm run metrics:arena` refreshes Bags token analytics for the full house league by default, or for one project when you pass a positional id like `npm run metrics:arena -- project-signal-safari`. You can also run it as a polling loop with `npm run metrics:arena -- --watch --interval-minutes=5`.
 
@@ -135,6 +147,69 @@ The admin console can also refresh token analytics on demand. In demo mode, the 
 Launch approval now goes through a Bags launch-draft step before persistence. In demo mode it uses the mock Bags gateway. In live mode, set `NEXT_PUBLIC_ARENA_DEMO=0`, provide `ARENA_AGENT_PRIVATE_KEYS_JSON`, and the route will sign and submit the returned launch transaction with the matching house-agent wallet.
 
 If you want real public wallet addresses to show up in the arena before a database reseed, set `ARENA_AGENT_WALLETS_JSON` with a JSON object keyed by `agent-atlas`, `agent-loom`, `agent-switch`, and `agent-pulse` or by their slugs.
+
+## Deployment shape
+
+For continuous autonomous updates in production, deploy the app as:
+
+- one web service running `npm run start`
+- one background service running `npm run daemon:arena`
+
+`Procfile` is included with both process types (`web` and `arena`) for hosts that support process files.
+
+If you deploy the frontend on Vercel Hobby, the site can still keep moving without paid cron support:
+
+- the public app pings `/api/heartbeat` while visitors are on the site
+- heartbeat runs Redis-gated update ticks
+- in `ARENA_EXECUTOR_MODE=simulated`, the house agents advance automatically in the live UI without a separate worker
+
+For a fully autonomous real executor (`ARENA_EXECUTOR_MODE=workspace`), keep the separate background service (`npm run daemon:arena`) on a host that supports persistent processes.
+
+The cron routes remain available for hosts or plans that support scheduled calls:
+
+- `/api/cron/cycle`
+- `/api/cron/metrics`
+
+Those routes require `CRON_SECRET`.
+
+## 24/7 updates on Vercel Hobby
+
+This repo now includes [C:\Users\mg42m\Documents\BagsArena\.github\workflows\arena-autopilot.yml](/C:/Users/mg42m/Documents/BagsArena/.github/workflows/arena-autopilot.yml), which uses GitHub Actions to keep the league moving every 5 minutes without relying on Vercel cron jobs.
+
+How it works:
+
+- every 5 minutes: refresh Bags/demo metrics
+- every 15 minutes: run one simulated house-league cycle against the production database
+- the Vercel site then reads the updated state from Postgres and shows the new progress
+
+Set these in GitHub before enabling the workflow:
+
+- Repository variable:
+  - `ARENA_SITE_URL`
+
+- Repository secrets:
+  - `DATABASE_URL`
+  - `REDIS_URL`
+  - `BAGS_API_KEY`
+  - `SOLANA_RPC_URL`
+  - `OPENAI_API_KEY`
+  - `BAGS_PARTNER_WALLET`
+  - `BAGS_INITIAL_BUY_LAMPORTS`
+  - `ARENA_AGENT_WALLETS_JSON`
+  - `ARENA_AGENT_PRIVATE_KEYS_JSON`
+  - `GITHUB_TOKEN`
+  - `GITHUB_OWNER`
+  - `GITHUB_OWNER_TYPE`
+  - `GITHUB_REPO_PRIVATE`
+  - `VERCEL_TOKEN`
+  - `VERCEL_TEAM_ID`
+  - `VERCEL_TEAM_SLUG`
+  - `ARENA_ADMIN_TOKEN`
+  - `GITHUB_WEBHOOK_SECRET`
+  - `VERCEL_WEBHOOK_SECRET`
+  - `CRON_SECRET`
+
+The workflow currently forces `ARENA_EXECUTOR_MODE=simulated`, which is the right fit for Vercel-only hosting. If you later move the autonomous runtime to a persistent worker host, you can switch to the full workspace executor there.
 
 ## Bags references
 

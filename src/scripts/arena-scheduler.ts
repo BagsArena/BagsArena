@@ -24,13 +24,7 @@ function readOption(name: string) {
   return process.argv[index + 1];
 }
 
-async function main() {
-  const positional = readPositionalArguments();
-  const projectId =
-    readOption("--project") ??
-    positional.find((argument) => argument.startsWith("project-"));
-  const direct = readFlag("--direct");
-
+async function scheduleOnce(projectId?: string, direct = false) {
   if (projectId) {
     if (direct) {
       const project = await runProjectCycle(projectId);
@@ -63,6 +57,32 @@ async function main() {
 
   const projects = await runHouseLeagueCycle();
   console.log(`[arena-scheduler] ran fallback direct house league cycle for ${projects.length} projects`);
+}
+
+async function main() {
+  const positional = readPositionalArguments();
+  const projectId =
+    readOption("--project") ??
+    positional.find((argument) => argument.startsWith("project-"));
+  const direct = readFlag("--direct");
+  const watch = readFlag("--watch");
+  const intervalMinutes = Number(readOption("--interval-minutes") ?? "15");
+
+  if (!watch) {
+    await scheduleOnce(projectId, direct);
+    return;
+  }
+
+  if (!Number.isFinite(intervalMinutes) || intervalMinutes <= 0) {
+    throw new Error("--interval-minutes must be a positive number.");
+  }
+
+  while (true) {
+    await scheduleOnce(projectId, direct);
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.round(intervalMinutes * 60_000)),
+    );
+  }
 }
 
 main().catch((error) => {

@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
+import { BuildSignalPanel } from "@/components/arena/build-signal-panel";
 import { cn } from "@/lib/utils";
 
 interface LaneVisualCardProps {
@@ -95,6 +96,35 @@ export function LaneVisualCard({
             ))}
           </div>
         ) : null}
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-[1.12fr_0.88fr]">
+          <BuildSignalPanel
+            title="Lane signal"
+            tag={phase}
+            accent={accent}
+            stats={[
+              { label: "Commits", value: commits, max: 12 },
+              { label: "Tasks", value: tasks, max: 8 },
+              { label: "Deploys", value: deploys, max: 6 },
+              { label: "Progress", value: progress, max: 100 },
+            ]}
+          />
+
+          <div className="ui-lane-pulse-grid">
+            {[commits, tasks, deploys * 2, Math.max(1, Math.round(progress / 10))]
+              .concat([commits, tasks, deploys * 2])
+              .map((value, index) => (
+              <span
+                key={`${projectName}-${index}`}
+                className="ui-lane-pulse"
+                style={{
+                  height: `${30 + value * 7}px`,
+                  animationDelay: `${index * 0.08}s`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
           <div className="ui-stat !rounded-[1rem] !bg-[color:var(--surface)] !p-3">

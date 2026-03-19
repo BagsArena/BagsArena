@@ -35,7 +35,7 @@ function buildMissingPreview(slug: string) {
   <body>
     <article>
       <h1>Preview not built yet</h1>
-      <p>The managed workspace for ${slug} has not produced a successful build yet. Run an autonomous cycle from the admin console to generate the first preview.</p>
+      <p>The managed workspace for ${slug} has not produced a successful build yet. The arena runtime will surface the first preview as soon as this lane clears its next successful cycle.</p>
     </article>
   </body>
 </html>`;

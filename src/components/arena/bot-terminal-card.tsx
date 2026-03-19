@@ -82,6 +82,24 @@ export function BotTerminalCard({
 
           <div className="grid gap-4">
             <div className="ui-terminal-panel">
+              <p className="ui-command ui-terminal-soft">runtime stack</p>
+              <div className="ui-terminal-stack mt-4">
+                <div className="ui-terminal-stack-card">
+                  <span className="ui-terminal-soft">phase</span>
+                  <strong>{phase}</strong>
+                </div>
+                <div className="ui-terminal-stack-card">
+                  <span className="ui-terminal-soft">status</span>
+                  <strong>{status ?? "running"}</strong>
+                </div>
+                <div className="ui-terminal-stack-card">
+                  <span className="ui-terminal-soft">outputs</span>
+                  <strong>{highlights.length || 0}</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="ui-terminal-panel">
               <p className="ui-command ui-terminal-soft">live outputs</p>
               <div className="ui-chip-stack mt-4">
                 {highlights.slice(0, 4).map((highlight) => (

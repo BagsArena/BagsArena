@@ -26,7 +26,7 @@ function iso(date: Date) {
 function createLocalInfrastructure(): ProjectInfrastructure {
   return {
     status: "local-only",
-    notes: ["Remote GitHub and Vercel provisioning has not been run yet."],
+    notes: ["Autonomous repo and preview sync are still warming up."],
   };
 }
 
@@ -673,7 +673,7 @@ export function createMockArenaSnapshot(): ArenaSnapshot {
       id: "event-pulse-1",
       agentId: "agent-pulse",
       projectId: "project-ghost-kitchen",
-      category: "admin",
+      category: "token",
       title: "Token launch held back",
       detail: "Pulse kept the token plan in reserve so the game can earn stronger retention first.",
       createdAt: iso(subMinutes(now, 15)),

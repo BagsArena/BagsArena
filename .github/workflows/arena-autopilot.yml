@@ -1,0 +1,66 @@
+name: Arena Autopilot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: arena-autopilot
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_ARENA_DEMO: "0"
+      NEXT_PUBLIC_APP_URL: ${{ vars.ARENA_SITE_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
+      BAGS_API_KEY: ${{ secrets.BAGS_API_KEY }}
+      SOLANA_RPC_URL: ${{ secrets.SOLANA_RPC_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      BAGS_PARTNER_WALLET: ${{ secrets.BAGS_PARTNER_WALLET }}
+      BAGS_INITIAL_BUY_LAMPORTS: ${{ secrets.BAGS_INITIAL_BUY_LAMPORTS }}
+      ARENA_AGENT_WALLETS_JSON: ${{ secrets.ARENA_AGENT_WALLETS_JSON }}
+      ARENA_AGENT_PRIVATE_KEYS_JSON: ${{ secrets.ARENA_AGENT_PRIVATE_KEYS_JSON }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_OWNER: ${{ secrets.GITHUB_OWNER }}
+      GITHUB_OWNER_TYPE: ${{ secrets.GITHUB_OWNER_TYPE }}
+      GITHUB_REPO_PRIVATE: ${{ secrets.GITHUB_REPO_PRIVATE }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+      VERCEL_TEAM_SLUG: ${{ secrets.VERCEL_TEAM_SLUG }}
+      ARENA_EXECUTOR_MODE: simulated
+      ARENA_CYCLE_INTERVAL_MINUTES: "15"
+      ARENA_METRICS_INTERVAL_MINUTES: "5"
+      ARENA_ADMIN_TOKEN: ${{ secrets.ARENA_ADMIN_TOKEN }}
+      GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+      VERCEL_WEBHOOK_SECRET: ${{ secrets.VERCEL_WEBHOOK_SECRET }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run house-league cycle every 15 minutes
+        shell: bash
+        run: |
+          minute="$(date -u +%M)"
+          if ((10#$minute % 15 == 0)); then
+            npm run scheduler:arena -- --direct
+          else
+            echo "Skipping league cycle at minute $minute"
+          fi
+
+      - name: Refresh token metrics
+        run: npm run metrics:arena

@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { LaneVisualCard } from "@/components/arena/lane-visual-card";
+import { PagePath } from "@/components/page-path";
 import { Sparkline } from "@/components/arena/sparkline";
 import { StatusTicker } from "@/components/arena/status-ticker";
 import { SiteHeader } from "@/components/site-header";
@@ -11,6 +11,7 @@ import {
   countRoadmapItemsByStatus,
   formatPercent,
   formatRelativeTime,
+  formatSeasonLabel,
   formatUsd,
   isProjectLive,
 } from "@/lib/utils";
@@ -32,24 +33,46 @@ export default async function TokenPage({
 
   const project = snapshot.projects.find((candidate) => candidate.token.mint === mint)!;
   const agent = snapshot.agents.find((candidate) => candidate.id === project.agentId)!;
+  const seasonLabel = formatSeasonLabel(snapshot.season.name, snapshot.season.slug);
   const isLive = isProjectLive(project);
   const doneCount = countRoadmapItemsByStatus(project.roadmap, "done");
   const totalCount = project.roadmap.length;
   const progress = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
+  const tokenSignal = isLive
+    ? token.performance.sparkline
+    : [
+        Math.max(1, doneCount * 12),
+        Math.max(1, project.activeRun.mergedCommits24h * 6),
+        Math.max(1, project.activeRun.completedTasks24h * 8),
+        Math.max(1, project.activeRun.successfulDeploys24h * 10),
+        Math.max(1, Math.round(progress)),
+        Math.max(1, totalCount * 8),
+      ];
 
   return (
     <div className="min-h-screen">
-      <SiteHeader seasonSlug={snapshot.season.slug} />
+      <SiteHeader seasonSlug={snapshot.season.slug} seasonName={snapshot.season.name} />
       <StatusTicker
         items={[
           { status: project.launchStatus, label: `${project.name} token track` },
           { status: isLive ? "live" : "building", label: token.symbol },
         ]}
       />
-      <main className="ui-shell pb-24 pt-8">
+      <main className="ui-shell ui-page-shell pb-24 pt-8">
+        <PagePath
+          className="reveal-up mb-5"
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Overview", href: "/overview" },
+            { label: project.name, href: `/project/${project.slug}` },
+            { label: token.symbol },
+          ]}
+        />
+
         <section className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
           <article className="ui-board paper-grid reveal-up rounded-[2rem] p-6 sm:p-8">
             <div className="flex flex-wrap items-center gap-3">
+              <span className="ui-chip">{seasonLabel}</span>
               <span className="ui-chip !bg-[color:var(--surface-soft)]">
                 {isLive ? "Bags token" : "Launch goal"}
               </span>
@@ -58,18 +81,52 @@ export default async function TokenPage({
             </div>
 
             <div className="mt-6 max-w-3xl">
-              <p className="ui-kicker">{project.name}</p>
+              <p className="ui-kicker">{project.name} / {seasonLabel}</p>
               <h1 className="ui-title mt-3 text-4xl sm:text-6xl">
                 {token.name} ({token.symbol})
               </h1>
               <p className="ui-subtitle mt-5 text-base sm:text-lg">
                 {isLive
                   ? token.description
-                  : `${token.description} The launch stays gated until the product earns its way onto Bags.`}
+                  : `${token.description} The Bags launch stays gated until the product earns it.`}
+              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-[color:var(--muted)]">
+                This page shows whether the token is still gated behind the product build or
+                already live on Bags.
               </p>
             </div>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-4">
+            <div className="ui-chip-stack mt-6">
+              {project.previewHighlights.slice(0, 4).map((highlight) => (
+                <span key={highlight} className="ui-browser-tag">
+                  {highlight}
+                </span>
+              ))}
+            </div>
+
+            <div className="ui-dossier-grid mt-8">
+              <div className="ui-dossier-card">
+                <p className="ui-stat-label">{isLive ? "Market state" : "Launch state"}</p>
+                <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+                  {isLive ? "live on Bags" : project.launchStatus}
+                </p>
+              </div>
+              <div className="ui-dossier-card">
+                <p className="ui-stat-label">Linked lane</p>
+                <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+                  {project.name}
+                </p>
+                <p className="mt-2 text-sm text-[color:var(--muted)]">{agent.displayName}</p>
+              </div>
+              <div className="ui-dossier-card">
+                <p className="ui-stat-label">{isLive ? "Holders" : "Launch gate"}</p>
+                <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+                  {isLive ? token.performance.holders : `${doneCount}/${totalCount}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="ui-stat">
                 <p className="ui-stat-label">{isLive ? "Market cap" : "Roadmap done"}</p>
                 <p className="ui-stat-value">
@@ -89,34 +146,36 @@ export default async function TokenPage({
                 </p>
               </div>
               <div className="ui-stat">
-                <p className="ui-stat-label">{isLive ? "Claim count" : "Partner config"}</p>
+                <p className="ui-stat-label">{isLive ? "Claim count" : "Fee share key"}</p>
                 <p className="mt-2 break-all text-sm font-semibold text-[color:var(--foreground)]">
                   {isLive ? token.performance.claimCount : token.partnerKey}
                 </p>
               </div>
             </div>
 
-            <div className="ui-divider mt-8 pt-6">
-              <div className="flex flex-wrap gap-3">
-                {isLive ? (
-                  <Link href={token.bagsUrl} className="ui-button-primary">
-                    View on Bags
-                    <ExternalLink className="size-4" />
-                  </Link>
-                ) : (
-                  <Link href={`/project/${project.slug}`} className="ui-button-primary">
-                    Open project
-                    <ExternalLink className="size-4" />
-                  </Link>
-                )}
-                <Link href={`/project/${project.slug}`} className="ui-button-secondary">
-                  Linked build board
+            <div className="mt-8 flex flex-wrap gap-3">
+              {isLive ? (
+                <Link href={token.bagsUrl} className="ui-button-primary">
+                  Open on Bags
                 </Link>
-              </div>
+              ) : (
+                <Link href={`/project/${project.slug}`} className="ui-button-primary">
+                  Open linked project
+                </Link>
+              )}
+              <Link href={`/season/${snapshot.season.slug}`} className="ui-button-secondary">
+                Open leaderboard
+              </Link>
+              <Link href={`/season/${snapshot.season.slug}/arena`} className="ui-button-secondary">
+                Watch live arena
+              </Link>
+              <Link href="/overview" className="ui-button-secondary">
+                Back to overview
+              </Link>
             </div>
           </article>
 
-          <article className="ui-browser ui-spotlight reveal-up reveal-delay-1">
+          <article id="market-panel" className="ui-browser ui-spotlight reveal-up reveal-delay-1">
             <div className="ui-browser-toolbar">
               <div className="ui-browser-traffic">
                 <span className="bg-[#ff5f57]" />
@@ -147,14 +206,14 @@ export default async function TokenPage({
                     <>
                       <p className="ui-browser-stat-value mt-3">{Math.round(progress)}%</p>
                       <p className="mt-3 text-sm text-[color:var(--muted)]">
-                        {doneCount} milestones complete before launch approval.
+                        {doneCount} milestones complete before the token unlocks.
                       </p>
                     </>
                   )}
                 </div>
 
                 <div className="ui-browser-module">
-                  <p className="ui-kicker">Fee split rail</p>
+                  <p className="ui-kicker">Fee split</p>
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="ui-browser-stat">
                       <span className="ui-stat-label">Creator</span>
@@ -174,7 +233,7 @@ export default async function TokenPage({
                 <div className="ui-browser-module">
                   <p className="ui-kicker">Market response</p>
                   <Sparkline
-                    values={token.performance.sparkline}
+                    values={tokenSignal}
                     stroke="var(--accent-strong)"
                     className="mt-5 h-28"
                   />
@@ -196,8 +255,53 @@ export default async function TokenPage({
                 </div>
               )}
 
+              <div className="ui-browser-grid ui-browser-grid-2">
+                <div className="ui-browser-module">
+                  <p className="ui-kicker">{isLive ? "Launch snapshot" : "Launch checklist"}</p>
+                  {isLive ? (
+                    <>
+                      <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+                        Updated {formatRelativeTime(token.performance.updatedAt)}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                        The market is now live. Follow price action, fees, and claims from here or
+                        jump out to Bags.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-3 text-base font-semibold text-[color:var(--foreground)]">
+                        {doneCount}/{totalCount} milestones complete
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                        The token stays locked until the product clears the remaining build gates.
+                      </p>
+                    </>
+                  )}
+                </div>
+                <div className="ui-browser-module">
+                  <p className="ui-kicker">Distribution</p>
+                  <div className="mt-4 space-y-3">
+                    {token.creators.slice(0, 2).map((creator) => (
+                      <div key={creator.wallet} className="ui-meter">
+                        <div className="ui-meter-head">
+                          <span>{creator.username}</span>
+                          <span>{creator.royaltyBps / 100}%</span>
+                        </div>
+                        <div className="ui-meter-track">
+                          <div
+                            className="ui-meter-fill"
+                            style={{ width: `${Math.max(12, creator.royaltyBps / 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               <div className="ui-chip-stack">
-                {project.previewHighlights.map((highlight) => (
+                {project.previewHighlights.slice(0, 4).map((highlight) => (
                   <span key={highlight} className="ui-browser-tag">
                     {highlight}
                   </span>
@@ -207,7 +311,24 @@ export default async function TokenPage({
           </article>
         </section>
 
-        <section className="mt-6 grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+        <section className="mt-6">
+          <div className="ui-section-nav">
+            <Link href="#market-panel" className="ui-section-pill">
+              Market
+            </Link>
+            <Link href="#distribution-panel" className="ui-section-pill">
+              Distribution
+            </Link>
+            <Link href="#claims-panel" className="ui-section-pill">
+              Claims
+            </Link>
+            <Link href="#partner-panel" className="ui-section-pill">
+              Partner
+            </Link>
+          </div>
+        </section>
+
+        <section id="distribution-panel" className="mt-6 grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
           <LaneVisualCard
             href={`/project/${project.slug}`}
             rank={snapshot.leaderboard.find((entry) => entry.project.id === project.id)?.rank}
@@ -230,13 +351,46 @@ export default async function TokenPage({
           <article className="ui-board reveal-up reveal-delay-1 rounded-[2rem] p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="ui-kicker">{isLive ? "Creator rail" : "Launch participants"}</p>
+                <p className="ui-kicker">{isLive ? "Creator split" : "Token participants"}</p>
                 <h2 className="ui-title mt-3 text-3xl">
-                  {isLive ? "Claims and royalties" : "Fee path"}
+                  {isLive ? "Fee split" : "Fee path"}
                 </h2>
               </div>
               <span className="ui-chip">{token.creators.length} creators</span>
             </div>
+
+            <div className="mt-6 ui-track-grid">
+              {[
+                {
+                  label: "Creators",
+                  value: token.creators.length,
+                  detail: "distribution participants",
+                },
+                {
+                  label: "Launch gate",
+                  value: project.launchStatus,
+                  detail: "current token state",
+                },
+                {
+                  label: isLive ? "Claims" : "Roadmap",
+                  value: isLive ? token.claims.length : `${doneCount}/${totalCount}`,
+                  detail: isLive ? "claim events logged" : "build gate progress",
+                },
+                {
+                  label: "Partner",
+                  value: "enabled",
+                  detail: "fee-sharing rail active",
+                },
+              ].map((item) => (
+                <article key={item.label} className="ui-track-card">
+                  <p className="ui-stat-label">{item.label}</p>
+                  <p className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                    {item.value}
+                  </p>
+                  <p className="text-sm text-[color:var(--muted)]">{item.detail}</p>
+                </article>
+                ))}
+              </div>
 
             <div className="mt-6 grid gap-3">
               {token.creators.map((creator, index) => (
@@ -281,15 +435,53 @@ export default async function TokenPage({
         </section>
 
         <section className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-          <article className="ui-panel reveal-up reveal-delay-2 rounded-[2rem] p-6 sm:p-8">
+          <article
+            id="claims-panel"
+            className="ui-panel reveal-up reveal-delay-2 rounded-[2rem] p-6 sm:p-8"
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="ui-kicker">{isLive ? "Claim events" : "Launch brief"}</p>
+                <p className="ui-kicker">{isLive ? "Claim events" : "Token path"}</p>
                 <h2 className="ui-title mt-3 text-3xl">
-                  {isLive ? "Recent claims" : "What happens next"}
+                  {isLive ? "Recent claims" : "Launch path"}
                 </h2>
               </div>
               <span className="ui-chip">{isLive ? token.claims.length : "3 gates"}</span>
+            </div>
+
+            <div className="mt-6 ui-track-grid">
+              {[
+                {
+                  label: isLive ? "Claim rows" : "Path steps",
+                  value: isLive ? token.claims.length : 3,
+                  detail: "sequence depth",
+                },
+                {
+                  label: "Mint",
+                  value: token.symbol,
+                  detail: "current token track",
+                },
+                {
+                  label: isLive ? "Updated" : "Gate",
+                  value: isLive
+                    ? formatRelativeTime(token.performance.updatedAt)
+                    : project.launchStatus,
+                  detail: "latest state signal",
+                },
+                {
+                  label: "Linked lane",
+                  value: project.name,
+                  detail: "origin project",
+                },
+              ].map((item) => (
+                <article key={item.label} className="ui-track-card">
+                  <p className="ui-stat-label">{item.label}</p>
+                  <p className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                    {item.value}
+                  </p>
+                  <p className="text-sm text-[color:var(--muted)]">{item.detail}</p>
+                </article>
+              ))}
             </div>
 
             <div className="ui-timeline mt-6">
@@ -319,7 +511,7 @@ export default async function TokenPage({
                 : [
                     "Finish the remaining product milestones in the linked project board.",
                     "Keep the fee-sharing configuration parked until launch-ready status is earned.",
-                    "Approve the real Bags transaction only after operator review.",
+                    "Unlock the Bags token once the product clears the league gate.",
                   ].map((line, index) => (
                     <article
                       key={line}
@@ -335,15 +527,39 @@ export default async function TokenPage({
             </div>
           </article>
 
-          <article className="ui-panel reveal-up reveal-delay-3 rounded-[2rem] p-6 sm:p-8">
+          <article
+            id="partner-panel"
+            className="ui-panel reveal-up reveal-delay-3 rounded-[2rem] p-6 sm:p-8"
+          >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="ui-kicker">Partner stats</p>
+                <p className="ui-kicker">Partner setup</p>
                 <h2 className="ui-title mt-3 text-3xl">
-                  {isLive ? "Fee view" : "Pre-launch setup"}
+                  {isLive ? "Fee view" : "Setup"}
                 </h2>
               </div>
               <span className="ui-chip">{isLive ? "live" : "pending"}</span>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="ui-glow-stat">
+                <p className="ui-stat-label">Partner</p>
+                <p className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                  enabled
+                </p>
+              </div>
+              <div className="ui-glow-stat">
+                <p className="ui-stat-label">Config</p>
+                <p className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                  ready
+                </p>
+              </div>
+              <div className="ui-glow-stat">
+                <p className="ui-stat-label">{isLive ? "Launch" : "Gate"}</p>
+                <p className="mt-3 text-2xl font-semibold text-[color:var(--foreground)]">
+                  {isLive ? "live" : project.launchStatus}
+                </p>
+              </div>
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -360,13 +576,13 @@ export default async function TokenPage({
                 </p>
               </div>
               <div className="ui-stat">
-                <p className="ui-stat-label">Metadata URI</p>
+                <p className="ui-stat-label">Metadata</p>
                 <p className="mt-2 break-all text-sm font-semibold text-[color:var(--foreground)]">
                   {token.metadataUrl}
                 </p>
               </div>
               <div className="ui-stat">
-                <p className="ui-stat-label">Launch signature</p>
+                <p className="ui-stat-label">Launch tx</p>
                 <p className="mt-2 break-all text-sm font-semibold text-[color:var(--foreground)]">
                   {token.launchSignature}
                 </p>

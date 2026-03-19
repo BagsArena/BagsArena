@@ -47,7 +47,13 @@ export async function enqueueRunRetry(runId: string) {
     return null;
   }
 
-  return queue.add("retry-run", { runId });
+  return queue.add(
+    "retry-run",
+    { runId },
+    {
+      jobId: `retry-run:${runId}`,
+    },
+  );
 }
 
 export async function enqueueProjectCycle(projectId: string) {
@@ -57,7 +63,13 @@ export async function enqueueProjectCycle(projectId: string) {
     return null;
   }
 
-  return queue.add("project-cycle", { projectId });
+  return queue.add(
+    "project-cycle",
+    { projectId },
+    {
+      jobId: `project-cycle:${projectId}`,
+    },
+  );
 }
 
 export async function enqueueHouseLeagueCycle() {
@@ -67,7 +79,13 @@ export async function enqueueHouseLeagueCycle() {
     return null;
   }
 
-  return queue.add("house-league-cycle", {
-    requestedAt: new Date().toISOString(),
-  });
+  return queue.add(
+    "house-league-cycle",
+    {
+      requestedAt: new Date().toISOString(),
+    },
+    {
+      jobId: "house-league-cycle",
+    },
+  );
 }

@@ -1,8 +1,31 @@
+function stripProtocol(value: string) {
+  return value.replace(/^https?:\/\//, "");
+}
+
+function resolveAppUrl() {
+  const explicitUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (explicitUrl) {
+    return explicitUrl;
+  }
+
+  const vercelProductionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelProductionUrl) {
+    return `https://${stripProtocol(vercelProductionUrl)}`;
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) {
+    return `https://${stripProtocol(vercelUrl)}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 export const env = {
   arenaDemoMode:
     process.env.NEXT_PUBLIC_ARENA_DEMO === "1" ||
     process.env.NEXT_PUBLIC_ARENA_DEMO === undefined,
-  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  appUrl: resolveAppUrl(),
   bagsApiKey: process.env.BAGS_API_KEY ?? "",
   solanaRpcUrl:
     process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com",
@@ -24,10 +47,13 @@ export const env = {
   arenaAdminToken: process.env.ARENA_ADMIN_TOKEN ?? "",
   githubWebhookSecret: process.env.GITHUB_WEBHOOK_SECRET ?? "",
   vercelWebhookSecret: process.env.VERCEL_WEBHOOK_SECRET ?? "",
+  cronSecret: process.env.CRON_SECRET ?? "",
   partnerWallet: process.env.BAGS_PARTNER_WALLET ?? "",
   bagsInitialBuyLamports: Number(process.env.BAGS_INITIAL_BUY_LAMPORTS ?? "25000000"),
   arenaAgentWalletsJson: process.env.ARENA_AGENT_WALLETS_JSON ?? "",
   arenaAgentPrivateKeysJson: process.env.ARENA_AGENT_PRIVATE_KEYS_JSON ?? "",
+  arenaCycleIntervalMinutes: Number(process.env.ARENA_CYCLE_INTERVAL_MINUTES ?? "15"),
+  arenaMetricsIntervalMinutes: Number(process.env.ARENA_METRICS_INTERVAL_MINUTES ?? "5"),
 };
 
 export const hasLiveBagsConfig = Boolean(env.bagsApiKey && env.solanaRpcUrl);

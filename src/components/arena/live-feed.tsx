@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import type { ArenaEvent } from "@/lib/arena/types";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatEventCategoryLabel, formatRelativeTime } from "@/lib/utils";
 
 interface LiveFeedProps {
   endpoint: string;
@@ -50,9 +50,14 @@ export function LiveFeed({ endpoint, initialEvents }: LiveFeedProps) {
               <div className="flex items-start gap-3">
                 <span className="ui-feed-dot mt-2 shrink-0" />
                 <div>
-                  <h4 className="text-sm font-semibold text-[color:var(--foreground)]">
-                    {event.title}
-                  </h4>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="ui-chip !bg-[color:var(--surface-soft)]">
+                      {formatEventCategoryLabel(event.category)}
+                    </span>
+                    <h4 className="text-sm font-semibold text-[color:var(--foreground)]">
+                      {event.title}
+                    </h4>
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
                     {event.detail}
                   </p>

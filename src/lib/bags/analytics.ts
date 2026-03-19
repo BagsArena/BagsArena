@@ -176,7 +176,7 @@ export async function refreshProjectTokenAnalytics(
           updatedAt: new Date().toISOString(),
         },
         event: {
-          category: "admin",
+          category: "token",
           title: "Token launch still in development",
           detail: `${project.name} is still shipping product work, so live Bags metrics are intentionally paused until the token launches.`,
           scoreDelta: 0,

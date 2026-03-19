@@ -1,5 +1,5 @@
 import { executeAgentCycle } from "@/lib/agents/executor";
-import { planAgentCycle } from "@/lib/agents/planner";
+import { buildFallbackAgentCyclePlan, planAgentCycle } from "@/lib/agents/planner";
 import { arenaRepository } from "@/lib/arena/repository";
 
 export async function runProjectCycle(projectId: string) {
@@ -74,6 +74,47 @@ export async function runHouseLeagueCycle() {
 
   for (const project of snapshot.projects.slice(0, 4)) {
     results.push(await runProjectCycle(project.id));
+  }
+
+  return results;
+}
+
+export async function runProjectFallbackCycle(projectId: string, now = new Date()) {
+  const snapshot = await arenaRepository.getSnapshot();
+  const project = snapshot.projects.find((candidate) => candidate.id === projectId);
+
+  if (!project) {
+    throw new Error("Project not found.");
+  }
+
+  const agent = snapshot.agents.find((candidate) => candidate.id === project.agentId);
+
+  if (!agent) {
+    throw new Error(`Agent not found for project ${project.slug}.`);
+  }
+
+  const startedAt = new Date(now);
+  const plan = buildFallbackAgentCyclePlan({
+    now: startedAt,
+    project,
+    agent,
+  });
+  const endedAt = new Date();
+
+  return arenaRepository.applyAgentCycle({
+    ...plan,
+    projectId,
+    startedAt: startedAt.toISOString(),
+    endedAt: endedAt.toISOString(),
+  });
+}
+
+export async function runHouseLeagueFallbackCycle(now = new Date()) {
+  const snapshot = await arenaRepository.getSnapshot();
+  const results = [];
+
+  for (const project of snapshot.projects.slice(0, 4)) {
+    results.push(await runProjectFallbackCycle(project.id, now));
   }
 
   return results;

@@ -51,3 +51,47 @@ export function countRoadmapItemsByStatus(
 ) {
   return items.filter((item) => item.status === status).length;
 }
+
+function extractSeasonNumber(input: string) {
+  const match = input.match(/(?:season|s)\s*0*(\d+)/i);
+  if (!match) {
+    return null;
+  }
+
+  return Number.parseInt(match[1] ?? "", 10);
+}
+
+export function formatSeasonLabel(seasonName: string, seasonSlug?: string) {
+  const seasonNumber =
+    extractSeasonNumber(seasonName) ??
+    (seasonSlug ? extractSeasonNumber(seasonSlug.replace(/-/g, " ")) : null);
+
+  if (seasonNumber === null || Number.isNaN(seasonNumber)) {
+    return seasonName;
+  }
+
+  return `Season ${seasonNumber}`;
+}
+
+export function formatSeasonStage(seasonName: string, seasonSlug?: string) {
+  const seasonNumber =
+    extractSeasonNumber(seasonName) ??
+    (seasonSlug ? extractSeasonNumber(seasonSlug.replace(/-/g, " ")) : null);
+
+  if (seasonNumber === 1) {
+    return "inaugural run";
+  }
+
+  return "current run";
+}
+
+export function formatEventCategoryLabel(category: string) {
+  switch (category.toLowerCase()) {
+    case "admin":
+      return "system";
+    case "run":
+      return "runtime";
+    default:
+      return category;
+  }
+}

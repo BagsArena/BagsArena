@@ -22,7 +22,7 @@ export interface GitHubProvisionedRepository {
   mocked: boolean;
 }
 
-function parseGitHubRepo(repoUrl: string) {
+export function parseGitHubRepo(repoUrl: string) {
   const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/i);
   if (!match) {
     return null;
@@ -141,9 +141,22 @@ async function createRepository(
       name: project.slug,
       description: `Bags Arena house-agent project for ${project.name}.`,
       private: env.githubRepoPrivate,
-      auto_init: true,
+      auto_init: false,
     }),
   });
+}
+
+export function buildAuthenticatedGitHubRemoteUrl(project: Pick<Project, "repoUrl">) {
+  if (!env.githubToken) {
+    return null;
+  }
+
+  const repo = parseGitHubRepo(project.repoUrl);
+  if (!repo) {
+    return null;
+  }
+
+  return `https://x-access-token:${env.githubToken}@github.com/${repo.owner}/${repo.repo}.git`;
 }
 
 export async function ensureGitHubRepository(
@@ -185,14 +198,9 @@ export async function ensureGitHubRepository(
 }
 
 function runGitPush(repoDir: string, remoteUrl: string) {
+  const gitCommand = process.platform === "win32" ? "git.exe" : "git";
   return new Promise<{ code: number; stdout: string; stderr: string }>((resolve, reject) => {
-    const spawnCommand = process.platform === "win32" ? "cmd.exe" : "git";
-    const spawnArgs =
-      process.platform === "win32"
-        ? ["/d", "/s", "/c", `git push "${remoteUrl}" HEAD:main`]
-        : ["push", remoteUrl, "HEAD:main"];
-
-    const child = spawn(spawnCommand, spawnArgs, {
+    const child = spawn(gitCommand, ["push", remoteUrl, "HEAD:main"], {
       cwd: repoDir,
       env: process.env,
       stdio: ["ignore", "pipe", "pipe"],
@@ -241,7 +249,14 @@ export async function syncWorkspaceCommitToGitHub(
     } satisfies GitHubSyncResult;
   }
 
-  const remoteUrl = `https://x-access-token:${env.githubToken}@github.com/${repo.owner}/${repo.repo}.git`;
+  const remoteUrl = buildAuthenticatedGitHubRemoteUrl(project);
+
+  if (!remoteUrl) {
+    return {
+      pushed: false,
+      detail: `GitHub push skipped because ${project.repoUrl} is not an authenticated GitHub remote.`,
+    } satisfies GitHubSyncResult;
+  }
 
   try {
     const result = await runGitPush(repoDir, remoteUrl);

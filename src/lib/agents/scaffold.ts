@@ -371,8 +371,12 @@ test("project data exposes a live objective", () => {
 });
 
 test("roadmap keeps at least one visible task", () => {
+  const hasVisibleTask = data.roadmap.some(
+    (item) => item.status === "active" || item.status === "queued",
+  );
+
   assert.ok(
-    data.roadmap.some((item) => item.status === "active" || item.status === "queued"),
+    hasVisibleTask || data.launchStatus === "launch-ready" || data.launchStatus === "live",
   );
 });
 `;

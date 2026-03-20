@@ -5,14 +5,13 @@ import { ensureVercelProject } from "@/lib/vercel/client";
 function determineInfrastructureStatus(args: {
   githubReady: boolean;
   vercelReady: boolean;
-  hasDeployHook: boolean;
   hadError: boolean;
 }): InfrastructureStatus {
   if (args.hadError) {
     return "degraded";
   }
 
-  if (args.githubReady && args.vercelReady && args.hasDeployHook) {
+  if (args.githubReady && args.vercelReady) {
     return "fully-provisioned";
   }
 
@@ -58,9 +57,16 @@ export async function provisionProjectInfrastructure(
     const status = determineInfrastructureStatus({
       githubReady: true,
       vercelReady: true,
-      hasDeployHook: Boolean(vercelProject.deployHookUrl),
       hadError: false,
     });
+
+    if (!vercelProject.deployHookUrl) {
+      notes.push(
+        "No Vercel deploy hook is registered yet. Git pushes to the linked repository will be used to trigger Vercel deployments.",
+      );
+    }
+
+    notes.push("Vercel standalone deployment settings synced.");
 
     return {
       repoUrl: githubRepo.htmlUrl,
@@ -98,7 +104,6 @@ export async function provisionProjectInfrastructure(
         status: determineInfrastructureStatus({
           githubReady: Boolean(project.infrastructure.githubRepoFullName),
           vercelReady: Boolean(project.infrastructure.vercelProjectId),
-          hasDeployHook: Boolean(project.infrastructure.vercelDeployHookUrl),
           hadError: true,
         }),
         lastProvisionedAt: new Date().toISOString(),

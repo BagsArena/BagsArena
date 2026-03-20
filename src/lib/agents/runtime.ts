@@ -1,8 +1,31 @@
 import { executeAgentCycle } from "@/lib/agents/executor";
 import { buildFallbackAgentCyclePlan, planAgentCycle } from "@/lib/agents/planner";
 import { arenaRepository } from "@/lib/arena/repository";
+import type { Project } from "@/lib/arena/types";
+import { env } from "@/lib/env";
+import { provisionProjectInfrastructure } from "@/lib/provisioning/orchestrator";
 
-export async function runProjectCycle(projectId: string) {
+function shouldAutoProvisionRemoteInfrastructure(project: Project) {
+  if (env.arenaDemoMode || env.arenaExecutorMode !== "workspace") {
+    return false;
+  }
+
+  if (!env.githubToken || !env.vercelToken) {
+    return false;
+  }
+
+  const vercelSettingsSynced = project.infrastructure.notes.some((note) =>
+    /standalone deployment settings synced/i.test(note),
+  );
+
+  return (
+    !project.infrastructure.githubRepoFullName ||
+    !project.infrastructure.vercelProjectId ||
+    !vercelSettingsSynced
+  );
+}
+
+async function prepareProjectForCycle(projectId: string) {
   const snapshot = await arenaRepository.getSnapshot();
   const project = snapshot.projects.find((candidate) => candidate.id === projectId);
 
@@ -15,6 +38,25 @@ export async function runProjectCycle(projectId: string) {
   if (!agent) {
     throw new Error(`Agent not found for project ${project.slug}.`);
   }
+
+  if (!shouldAutoProvisionRemoteInfrastructure(project)) {
+    return { project, agent };
+  }
+
+  const provisioned = await provisionProjectInfrastructure(project, agent);
+  const updatedProject = await arenaRepository.updateProjectInfrastructure(
+    project.id,
+    provisioned,
+  );
+
+  return {
+    project: updatedProject,
+    agent,
+  };
+}
+
+export async function runProjectCycle(projectId: string) {
+  const { project, agent } = await prepareProjectForCycle(projectId);
 
   const startedAt = new Date();
   const plan = await planAgentCycle({

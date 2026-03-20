@@ -2,6 +2,10 @@ function stripProtocol(value: string) {
   return value.replace(/^https?:\/\//, "");
 }
 
+function looksLikeGitHubPersonalToken(value: string) {
+  return /^(ghp_|github_pat_)/.test(value);
+}
+
 function resolveAppUrl() {
   const explicitUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (explicitUrl) {
@@ -21,11 +25,67 @@ function resolveAppUrl() {
   return "http://localhost:3000";
 }
 
-export const env = {
-  arenaDemoMode:
+function resolveProjectPublicDomainBase(appUrl: string) {
+  try {
+    const hostname = new URL(appUrl).hostname.replace(/^www\./i, "");
+
+    if (
+      hostname === "localhost" ||
+      /^\d+\.\d+\.\d+\.\d+$/.test(hostname) ||
+      hostname.endsWith(".vercel.app")
+    ) {
+      return "";
+    }
+
+    return hostname;
+  } catch {
+    return "";
+  }
+}
+
+function resolveGitHubToken() {
+  const workflowToken = process.env.GITHUB_TOKEN?.trim() ?? "";
+  const automationToken = process.env.ARENA_ADMIN_TOKEN?.trim() ?? "";
+
+  if ((process.env.GITHUB_ACTIONS || process.env.CI) && looksLikeGitHubPersonalToken(automationToken)) {
+    return automationToken;
+  }
+
+  return workflowToken || (looksLikeGitHubPersonalToken(automationToken) ? automationToken : "");
+}
+
+function resolveArenaDemoMode() {
+  return (
     process.env.NEXT_PUBLIC_ARENA_DEMO === "1" ||
-    process.env.NEXT_PUBLIC_ARENA_DEMO === undefined,
-  appUrl: resolveAppUrl(),
+    process.env.NEXT_PUBLIC_ARENA_DEMO === undefined
+  );
+}
+
+function resolveArenaExecutorMode(arenaDemoMode: boolean, githubToken: string) {
+  const configured = process.env.ARENA_EXECUTOR_MODE ?? "workspace";
+
+  if (
+    configured === "simulated" &&
+    !arenaDemoMode &&
+    (process.env.GITHUB_ACTIONS || process.env.CI) &&
+    githubToken &&
+    process.env.VERCEL_TOKEN?.trim()
+  ) {
+    return "workspace";
+  }
+
+  return configured;
+}
+
+const arenaDemoMode = resolveArenaDemoMode();
+const githubToken = resolveGitHubToken();
+const appUrl = resolveAppUrl();
+
+export const env = {
+  arenaDemoMode,
+  appUrl,
+  projectPublicDomainBase:
+    process.env.ARENA_PROJECT_DOMAIN_BASE ?? resolveProjectPublicDomainBase(appUrl),
   bagsApiKey: process.env.BAGS_API_KEY ?? "",
   solanaRpcUrl:
     process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com",
@@ -36,12 +96,12 @@ export const env = {
   vercelTeamId: process.env.VERCEL_TEAM_ID ?? "",
   vercelTeamSlug: process.env.VERCEL_TEAM_SLUG ?? "",
   vercelApiBaseUrl: process.env.VERCEL_API_BASE_URL ?? "https://api.vercel.com",
-  githubToken: process.env.GITHUB_TOKEN ?? "",
+  githubToken,
   githubOwner: process.env.GITHUB_OWNER ?? "",
   githubOwnerType: process.env.GITHUB_OWNER_TYPE ?? "",
   githubRepoPrivate: process.env.GITHUB_REPO_PRIVATE !== "0",
   githubApiBaseUrl: process.env.GITHUB_API_BASE_URL ?? "https://api.github.com",
-  arenaExecutorMode: process.env.ARENA_EXECUTOR_MODE ?? "workspace",
+  arenaExecutorMode: resolveArenaExecutorMode(arenaDemoMode, githubToken),
   arenaWorkspaceRoot: process.env.ARENA_WORKSPACE_ROOT ?? "",
   vercelDeployHooksJson: process.env.ARENA_VERCEL_DEPLOY_HOOKS_JSON ?? "",
   arenaAdminToken: process.env.ARENA_ADMIN_TOKEN ?? "",

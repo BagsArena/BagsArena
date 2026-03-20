@@ -18,8 +18,16 @@ import {
 } from "@/lib/agents/workspace";
 import type { HouseAgent, Project } from "@/lib/arena/types";
 import { env } from "@/lib/env";
-import { syncWorkspaceCommitToGitHub } from "@/lib/github/client";
-import { triggerVercelDeploy } from "@/lib/vercel/client";
+import {
+  buildAuthenticatedGitHubRemoteUrl,
+  syncWorkspaceCommitToGitHub,
+} from "@/lib/github/client";
+import {
+  createVercelDeployment,
+  triggerVercelDeploy,
+  type VercelDeployResult,
+  type VercelDeploymentFile,
+} from "@/lib/vercel/client";
 
 interface CommandResult {
   command: string;
@@ -32,7 +40,6 @@ interface CommandResult {
 
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 const gitCommand = process.platform === "win32" ? "git.exe" : "git";
-
 let gitAvailablePromise: Promise<boolean> | null = null;
 
 function buildPseudoSha(projectSlug: string, value: string) {
@@ -147,6 +154,28 @@ async function appendChangelogEntry(repoDir: string, entry: string) {
   await fs.writeFile(changelogPath, `${existingChangelog}\n\n${entry}`, "utf8");
 }
 
+async function writeVercelProjectLink(repoDir: string, project: Project) {
+  if (!project.infrastructure.vercelProjectId || !env.vercelTeamId) {
+    return false;
+  }
+
+  const vercelDir = path.join(repoDir, ".vercel");
+  await ensureDirectory(vercelDir);
+  await fs.writeFile(
+    path.join(vercelDir, "project.json"),
+    JSON.stringify(
+      {
+        orgId: env.vercelTeamId,
+        projectId: project.infrastructure.vercelProjectId,
+      },
+      null,
+      2,
+    ),
+    "utf8",
+  );
+  return true;
+}
+
 function summarizeCommandOutput(result: CommandResult) {
   const output = `${result.stdout}\n${result.stderr}`
     .split(/\r?\n/)
@@ -257,7 +286,12 @@ ${project.roadmap
 `;
 }
 
-async function runCommand(command: string, args: string[], cwd: string) {
+async function runCommand(
+  command: string,
+  args: string[],
+  cwd: string,
+  extraEnv?: Record<string, string | undefined>,
+) {
   const startedAt = Date.now();
 
   return new Promise<CommandResult>((resolve, reject) => {
@@ -277,7 +311,10 @@ async function runCommand(command: string, args: string[], cwd: string) {
 
     const child = spawn(spawnCommand, spawnArgs, {
       cwd,
-      env: process.env,
+      env: {
+        ...process.env,
+        ...extraEnv,
+      },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true,
     });
@@ -336,6 +373,25 @@ async function ensureGitRepo(repoDir: string, agent: HouseAgent) {
   return true;
 }
 
+async function cloneRemoteWorkspace(canonicalDir: string, project: Project) {
+  const remoteUrl = buildAuthenticatedGitHubRemoteUrl(project);
+  if (!remoteUrl || !(await hasGit())) {
+    return false;
+  }
+
+  const parentDir = path.dirname(canonicalDir);
+  await ensureDirectory(parentDir);
+  await removeDirectory(canonicalDir);
+
+  const cloneResult = await runCommand(
+    gitCommand,
+    ["clone", remoteUrl, canonicalDir],
+    parentDir,
+  );
+
+  return cloneResult.code === 0;
+}
+
 async function commitWorkspace(repoDir: string, message: string) {
   if (!(await hasGit())) {
     return {
@@ -385,6 +441,10 @@ async function ensureCanonicalWorkspace(context: AgentExecutionContext) {
     return canonicalDir;
   }
 
+  if (await cloneRemoteWorkspace(canonicalDir, context.project)) {
+    return canonicalDir;
+  }
+
   await resetDirectory(canonicalDir);
   await writeProjectFiles(canonicalDir, context.project, context.agent);
   await appendChangelogEntry(
@@ -397,6 +457,67 @@ async function ensureCanonicalWorkspace(context: AgentExecutionContext) {
   }
 
   return canonicalDir;
+}
+
+async function collectDeploymentFiles(
+  rootDir: string,
+  currentDir = rootDir,
+): Promise<VercelDeploymentFile[]> {
+  const entries = await fs.readdir(currentDir, {
+    withFileTypes: true,
+  });
+  const files: VercelDeploymentFile[] = [];
+
+  for (const entry of entries) {
+    const absolutePath = path.join(currentDir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...(await collectDeploymentFiles(rootDir, absolutePath)));
+      continue;
+    }
+
+    const relativePath = path
+      .relative(rootDir, absolutePath)
+      .split(path.sep)
+      .join("/");
+    const data = await fs.readFile(absolutePath);
+
+    files.push({
+      file: relativePath,
+      data: data.toString("base64"),
+      encoding: "base64",
+    });
+  }
+
+  return files;
+}
+
+async function deployWorkspaceToVercel(
+  repoDir: string,
+  project: Project,
+  commitSha?: string,
+  commitMessage?: string,
+): Promise<VercelDeployResult> {
+  const distDir = path.join(repoDir, "dist");
+  if (!(await pathExists(distDir))) {
+    return {
+      triggered: false,
+      detail: "Vercel deploy skipped because dist output was not generated.",
+    };
+  }
+
+  if (!(await writeVercelProjectLink(repoDir, project))) {
+    return {
+      triggered: false,
+      detail: "Vercel deploy skipped because this project is not provisioned in Vercel yet.",
+    };
+  }
+
+  const files = await collectDeploymentFiles(distDir);
+  return createVercelDeployment(project, files, {
+    commitSha,
+    commitMessage,
+  });
 }
 
 async function writeArtifactFile(projectSlug: string, fileName: string, contents: string) {
@@ -477,10 +598,14 @@ export async function executeAgentCycle(
       );
       gitDetail = githubResult.detail;
 
-      const vercelResult = await triggerVercelDeploy(
-        context.project.slug,
-        context.project.infrastructure.vercelDeployHookUrl,
-      );
+      const commitMessage = `feat: ${context.plan.objective}`.slice(0, 72);
+      const vercelResult = context.project.infrastructure.vercelDeployHookUrl
+        ? await triggerVercelDeploy(
+            context.project.slug,
+            context.project.infrastructure.vercelDeployHookUrl,
+            context.project,
+          )
+        : await deployWorkspaceToVercel(runDir, context.project, commitSha, commitMessage);
       vercelDetail = vercelResult.detail;
       previewUrl = vercelResult.inspectorUrl ?? getPreviewUrl(context.project.slug);
 

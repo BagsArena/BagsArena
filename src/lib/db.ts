@@ -10,7 +10,8 @@ declare global {
 }
 
 function readPoolMax() {
-  const fallback = process.env.VERCEL ? "1" : "5";
+  const fallback =
+    process.env.VERCEL || process.env.GITHUB_ACTIONS || process.env.CI ? "1" : "5";
   const value = Number(process.env.DATABASE_POOL_MAX ?? fallback);
 
   if (!Number.isFinite(value) || value <= 0) {

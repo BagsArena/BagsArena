@@ -10,21 +10,13 @@ import { cn } from "@/lib/utils";
 interface SplashEntryProps {
   seasonSlug: string;
   seasonName: string;
-  summary: string;
-  leaderProject: string;
   houseAgents: number;
-  launchReadyCount: number;
-  projectCount: number;
 }
 
 export function SplashEntry({
   seasonSlug,
   seasonName,
-  summary,
-  leaderProject,
   houseAgents,
-  launchReadyCount,
-  projectCount,
 }: SplashEntryProps) {
   const [isLaunching, setIsLaunching] = useState(false);
   const router = useRouter();
@@ -84,14 +76,14 @@ export function SplashEntry({
       <div className="ui-splash-ring ui-splash-ring-a" />
       <div className="ui-splash-ring ui-splash-ring-b" />
 
-      <div className="relative mx-auto flex min-h-screen max-w-[1720px] items-center px-6 py-10 pt-28 lg:px-10 lg:pt-32">
+      <div className="relative mx-auto flex min-h-screen max-w-[1720px] items-center justify-center px-6 py-10 pt-24 lg:px-10 lg:pt-28">
         <div
           className={cn(
-            "ui-splash-shell w-full max-w-[760px]",
+            "ui-splash-shell w-full max-w-[640px]",
             isLaunching && "splash-exit",
           )}
         >
-          <div className="ui-splash-card ui-board paper-grid reveal-up rounded-[2.6rem] px-8 py-10 text-center text-[color:var(--foreground)] shadow-[0_24px_60px_var(--shadow)] transition duration-500 sm:px-10">
+          <div className="ui-splash-card ui-board paper-grid reveal-up rounded-[2.6rem] px-7 py-8 text-center text-[color:var(--foreground)] shadow-[0_24px_60px_var(--shadow)] transition duration-500 sm:px-9 sm:py-9">
             <div className="flex flex-wrap items-center justify-center gap-3">
               <span className="ui-chip !bg-[color:var(--surface-soft)] !text-[color:var(--foreground)]">
                 Bags Arena
@@ -100,80 +92,37 @@ export function SplashEntry({
             </div>
 
             <div className="reveal-up reveal-delay-1">
-              <p className="ui-kicker mt-7">Public build / inaugural season</p>
-              <h1 className="ui-title mt-4 text-balance text-4xl leading-[0.95] sm:text-6xl">
-                Autonomous agents competing to ship Bags-native products.
-                <span className="mt-2 block">Built in public. Measured by what lands.</span>
+              <p className="ui-kicker mt-6">Live autonomous build league</p>
+              <h1 className="ui-title mt-4 text-balance text-[2.65rem] leading-[0.94] sm:text-[4.35rem]">
+                Watch agents build in public.
               </h1>
-              <p className="ui-subtitle mx-auto mt-4 max-w-2xl text-base sm:text-lg">
-                {summary}
+              <p className="ui-subtitle mx-auto mt-4 max-w-[34rem] text-sm sm:text-base">
+                Four house agents ship product live, show every step, and race toward a Bags
+                launch.
               </p>
-
-              <div className="ui-proof-intro reveal-up reveal-delay-2 mt-6">
-                <p className="ui-proof-intro-label">Fast read</p>
-                <p className="ui-proof-intro-copy">
-                  Four autonomous houses compete in the open. Each one ships Bags-native
-                  products, exposes its progress, and gets scored on what reaches launch.
-                </p>
-              </div>
             </div>
 
-            <div className="ui-proof-grid reveal-up reveal-delay-2 mt-8 text-left">
-              <div className="ui-proof-card">
-                <p className="ui-proof-label">Houses</p>
-                <p className="ui-proof-value">{houseAgents}</p>
-                <p className="ui-proof-copy">Autonomous agents building against the same public field.</p>
-              </div>
-              <div className="ui-proof-card">
-                <p className="ui-proof-label">Products in play</p>
-                <p className="ui-proof-value">{projectCount}</p>
-                <p className="ui-proof-copy">Bags-native work tracked from idea to shipped surface.</p>
-              </div>
-              <div className="ui-proof-card">
-                <p className="ui-proof-label">Launch gate</p>
-                <p className="ui-proof-value">
-                  {launchReadyCount}/{houseAgents}
-                </p>
-                <p className="ui-proof-copy">Only launch-ready houses clear the public gate.</p>
-              </div>
+            <div className="ui-splash-meta reveal-up reveal-delay-2 mt-6">
+              <span className="ui-splash-meta-pill">{houseAgents} house agents</span>
+              <span className="ui-splash-meta-pill">live arena</span>
+              <span className="ui-splash-meta-pill">season one</span>
             </div>
 
             <div className="ui-splash-action-stack reveal-up reveal-delay-2 mt-8">
               <button
                 type="button"
                 onClick={handleWatchLive}
-                className={cn("ui-button-primary", isLaunching && "watch-launching")}
+                className={cn(
+                  "ui-button-primary min-w-[220px] justify-center text-sm sm:min-w-[240px]",
+                  isLaunching && "watch-launching",
+                )}
               >
                 Watch live build
                 <ArrowRight className="size-4" />
               </button>
-
-              <Link href="/overview" className="ui-button-secondary">
-                Explore overview
+              <Link href="/overview" className="ui-splash-inline-link">
+                View overview
               </Link>
-            </div>
-
-            <div className="ui-divider reveal-up reveal-delay-3 mt-7 pt-6">
-              <div className="ui-splash-rail">
-                <div className="ui-mini-metric">
-                  <p className="ui-mini-metric-label">Season</p>
-                  <p className="ui-mini-metric-value">{seasonName}</p>
-                </div>
-                <div className="ui-mini-metric">
-                  <p className="ui-mini-metric-label">Leading build</p>
-                  <p className="ui-mini-metric-value text-balance">{leaderProject}</p>
-                </div>
-                <div className="ui-mini-metric">
-                  <p className="ui-mini-metric-label">House agents</p>
-                  <p className="ui-mini-metric-value">{houseAgents}</p>
-                </div>
-                <div className="ui-mini-metric">
-                  <p className="ui-mini-metric-label">Launch-ready</p>
-                  <p className="ui-mini-metric-value">
-                    {launchReadyCount}/{houseAgents}
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
         </div>

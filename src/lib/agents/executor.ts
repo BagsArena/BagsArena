@@ -295,10 +295,15 @@ async function runCommand(
   const startedAt = Date.now();
 
   return new Promise<CommandResult>((resolve, reject) => {
-    const spawnCommand = process.platform === "win32" ? "cmd.exe" : command;
-    const spawnArgs =
-      process.platform === "win32"
-        ? ["/d", "/s", "/c", [command, ...args]
+    const shouldUseShellWrapper =
+      process.platform === "win32" && /\.(cmd|bat)$/i.test(command);
+    const spawnCommand = shouldUseShellWrapper ? "cmd.exe" : command;
+    const spawnArgs = shouldUseShellWrapper
+      ? [
+          "/d",
+          "/s",
+          "/c",
+          [command, ...args]
             .map((value) => {
               if (!/[ \t"]/.test(value)) {
                 return value;
@@ -306,8 +311,9 @@ async function runCommand(
 
               return `"${value.replace(/"/g, '\\"')}"`;
             })
-            .join(" ")]
-        : args;
+            .join(" "),
+        ]
+      : args;
 
     const child = spawn(spawnCommand, spawnArgs, {
       cwd,
@@ -402,7 +408,7 @@ async function commitWorkspace(repoDir: string, message: string) {
   }
 
   await runCommand(gitCommand, ["add", "."], repoDir);
-  const commitResult = await runCommand(gitCommand, ["commit", "-m", message], repoDir);
+  let commitResult = await runCommand(gitCommand, ["commit", "-m", message], repoDir);
 
   if (commitResult.code !== 0 && !commitResult.stderr.includes("nothing to commit")) {
     return {
@@ -412,7 +418,41 @@ async function commitWorkspace(repoDir: string, message: string) {
     };
   }
 
-  const shaResult = await runCommand(gitCommand, ["rev-parse", "--short", "HEAD"], repoDir);
+  let shaResult = await runCommand(
+    gitCommand,
+    ["rev-parse", "--verify", "--short", "HEAD"],
+    repoDir,
+  );
+
+  if (shaResult.code !== 0 || !shaResult.stdout.trim()) {
+    const statusResult = await runCommand(
+      gitCommand,
+      ["status", "--porcelain"],
+      repoDir,
+    );
+
+    if (statusResult.stdout.trim()) {
+      commitResult = await runCommand(
+        gitCommand,
+        ["commit", "--allow-empty", "-m", message],
+        repoDir,
+      );
+      shaResult = await runCommand(
+        gitCommand,
+        ["rev-parse", "--verify", "--short", "HEAD"],
+        repoDir,
+      );
+    }
+  }
+
+  if (shaResult.code !== 0 || !shaResult.stdout.trim()) {
+    return {
+      sha: "",
+      diff: commitResult.stdout.trim() || commitResult.stderr.trim(),
+      detail: "Workspace commit did not produce a HEAD revision.",
+    };
+  }
+
   const showResult = await runCommand(
     gitCommand,
     ["show", "--stat", "--name-only", "--format=medium", "HEAD"],
@@ -437,11 +477,11 @@ async function syncRunDirToCanonicalRepo(runDir: string, canonicalDir: string) {
 async function ensureCanonicalWorkspace(context: AgentExecutionContext) {
   const canonicalDir = getCanonicalProjectRepoDir(context.project.slug);
 
-  if (await pathExists(path.join(canonicalDir, "package.json"))) {
+  if (await cloneRemoteWorkspace(canonicalDir, context.project)) {
     return canonicalDir;
   }
 
-  if (await cloneRemoteWorkspace(canonicalDir, context.project)) {
+  if (await pathExists(path.join(canonicalDir, "package.json"))) {
     return canonicalDir;
   }
 

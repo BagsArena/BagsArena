@@ -25,24 +25,6 @@ function resolveAppUrl() {
   return "http://localhost:3000";
 }
 
-function resolveProjectPublicDomainBase(appUrl: string) {
-  try {
-    const hostname = new URL(appUrl).hostname.replace(/^www\./i, "");
-
-    if (
-      hostname === "localhost" ||
-      /^\d+\.\d+\.\d+\.\d+$/.test(hostname) ||
-      hostname.endsWith(".vercel.app")
-    ) {
-      return "";
-    }
-
-    return hostname;
-  } catch {
-    return "";
-  }
-}
-
 function resolveGitHubToken() {
   const workflowToken = process.env.GITHUB_TOKEN?.trim() ?? "";
   const automationToken = process.env.ARENA_ADMIN_TOKEN?.trim() ?? "";
@@ -84,8 +66,7 @@ const appUrl = resolveAppUrl();
 export const env = {
   arenaDemoMode,
   appUrl,
-  projectPublicDomainBase:
-    process.env.ARENA_PROJECT_DOMAIN_BASE ?? resolveProjectPublicDomainBase(appUrl),
+  projectPublicDomainBase: process.env.ARENA_PROJECT_DOMAIN_BASE ?? "",
   bagsApiKey: process.env.BAGS_API_KEY ?? "",
   solanaRpcUrl:
     process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com",

@@ -64,6 +64,31 @@ function buildPublicProjectDomain(projectSlug: string) {
   return `${projectSlug}.${env.projectPublicDomainBase}`;
 }
 
+function buildAutomaticProjectAlias(projectSlug: string) {
+  if (!env.vercelTeamSlug) {
+    return undefined;
+  }
+
+  return `${projectSlug}-${env.vercelTeamSlug}.vercel.app`;
+}
+
+function toHttpsUrl(hostname?: string) {
+  if (!hostname) {
+    return undefined;
+  }
+
+  return /^https?:\/\//i.test(hostname) ? hostname : `https://${hostname}`;
+}
+
+function pickPreferredAlias(aliases: string[] = []) {
+  const normalized = aliases.filter(Boolean);
+
+  return (
+    normalized.find((alias) => alias.endsWith(".vercel.app")) ??
+    normalized[0]
+  );
+}
+
 async function vercelRequest<T>(pathname: string, init?: RequestInit) {
   const response = await fetch(`${env.vercelApiBaseUrl}${pathname}${withTeamQuery()}`, {
     ...init,
@@ -90,6 +115,18 @@ function mapVercelProject(record: {
   id: string;
   name: string;
   accountId?: string;
+  latestDeployments?: Array<{
+    alias?: string[];
+    automaticAliases?: string[];
+    url?: string;
+  }>;
+  targets?: {
+    production?: {
+      alias?: string[];
+      automaticAliases?: string[];
+      url?: string;
+    };
+  };
   link?: {
     deployHooks?: Array<{
       name?: string;
@@ -98,12 +135,23 @@ function mapVercelProject(record: {
   };
 }): VercelProvisionedProject {
   const deployHook = record.link?.deployHooks?.[0];
+  const target = record.targets?.production;
+  const alias =
+    pickPreferredAlias(target?.automaticAliases) ??
+    pickPreferredAlias(target?.alias) ??
+    pickPreferredAlias(record.latestDeployments?.[0]?.automaticAliases) ??
+    pickPreferredAlias(record.latestDeployments?.[0]?.alias);
+  const deploymentUrl =
+    normalizeDeploymentUrl(target?.url) ??
+    normalizeDeploymentUrl(record.latestDeployments?.[0]?.url) ??
+    toHttpsUrl(buildAutomaticProjectAlias(record.name)) ??
+    `https://${record.name}.vercel.app`;
 
   return {
     id: record.id,
     name: record.name,
     accountId: record.accountId,
-    previewUrl: `https://${record.name}.vercel.app`,
+    previewUrl: toHttpsUrl(alias) ?? deploymentUrl,
     deployHookUrl: deployHook?.url,
     deployHookName: deployHook?.name,
     mocked: false,
@@ -115,6 +163,18 @@ async function getProject(projectName: string) {
     id: string;
     name: string;
     accountId?: string;
+    latestDeployments?: Array<{
+      alias?: string[];
+      automaticAliases?: string[];
+      url?: string;
+    }>;
+    targets?: {
+      production?: {
+        alias?: string[];
+        automaticAliases?: string[];
+        url?: string;
+      };
+    };
     link?: {
       deployHooks?: Array<{
         name?: string;
@@ -169,6 +229,18 @@ async function createProject(
     id: string;
     name: string;
     accountId?: string;
+    latestDeployments?: Array<{
+      alias?: string[];
+      automaticAliases?: string[];
+      url?: string;
+    }>;
+    targets?: {
+      production?: {
+        alias?: string[];
+        automaticAliases?: string[];
+        url?: string;
+      };
+    };
     link?: {
       deployHooks?: Array<{
         name?: string;
@@ -206,6 +278,18 @@ async function updateProjectSettings(projectName: string) {
     id: string;
     name: string;
     accountId?: string;
+    latestDeployments?: Array<{
+      alias?: string[];
+      automaticAliases?: string[];
+      url?: string;
+    }>;
+    targets?: {
+      production?: {
+        alias?: string[];
+        automaticAliases?: string[];
+        url?: string;
+      };
+    };
     link?: {
       deployHooks?: Array<{
         name?: string;
@@ -220,6 +304,7 @@ async function updateProjectSettings(projectName: string) {
       installCommand: "echo skip-install",
       outputDirectory: ".",
       rootDirectory: null,
+      ssoProtection: null,
     }),
   });
 }
@@ -437,6 +522,7 @@ export async function createVercelDeployment(
       (buildPublicProjectDomain(project.slug)
         ? `https://${buildPublicProjectDomain(project.slug)}`
         : undefined) ??
+      toHttpsUrl(buildAutomaticProjectAlias(project.slug)) ??
       normalizeDeploymentUrl(response.inspectorUrl ?? response.url),
   } satisfies VercelDeployResult;
 }
